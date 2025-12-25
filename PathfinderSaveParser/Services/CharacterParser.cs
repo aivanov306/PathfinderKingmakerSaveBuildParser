@@ -148,6 +148,23 @@ public class EnhancedCharacterParser
         sb.AppendLine();
         sb.AppendLine();
 
+        // Equipment
+        try
+        {
+            var equipmentParser = new EquipmentParser(_blueprintLookup, _resolver);
+            var equipmentReport = equipmentParser.ParseEquipment(descriptor);
+            if (!string.IsNullOrEmpty(equipmentReport))
+            {
+                sb.AppendLine(equipmentReport);
+                sb.AppendLine();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Failed to parse equipment: {ex.Message}");
+            Console.WriteLine($"  Stack: {ex.StackTrace?.Split('\n')[0]}");
+        }
+
         // Level-by-Level History
         sb.AppendLine("LEVEL-BY-LEVEL BUILD HISTORY");
         sb.AppendLine(new string('=', 80));

@@ -8,6 +8,10 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 - **Character Name**: Displays character name (including custom names if set)
 - **Race & Class**: Shows racial heritage and all classes with archetypes and levels
 - **Base Attributes**: Displays ability scores (Str, Dex, Con, Int, Wis, Cha)
+- **Equipment**: Shows equipped weapons, armor, and accessories with enchantments
+  - Active weapon set (main hand and off-hand)
+  - All armor and accessory slots (body, head, neck, belt, cloak, rings, bracers, gloves, boots)
+  - Item enchantments displayed inline
 - **Level-by-Level Build History**: Detailed progression showing features, feats, and abilities acquired at each level
 
 ### Kingdom Statistics
@@ -54,7 +58,8 @@ PathfinderKingmakerSaveBuildParser/
 │   │   └── CharacterModels.cs        # Character & progression models
 │   └── Services/
 │       ├── KingdomStatsParser.cs     # Kingdom statistics parser
-│       ├── EnhancedCharacterParser.cs # Character build parser with $ref resolution
+│       ├── CharacterParser.cs        # Character build parser with $ref resolution
+│       ├── EquipmentParser.cs        # Equipment and item parser
 │       ├── RefResolver.cs            # JSON $ref pointer resolver
 │       ├── BlueprintLookupService.cs # Blueprint GUID to name resolver
 │       └── SaveFileInspector.cs      # Save file metadata inspector
@@ -125,7 +130,7 @@ The application generates the following reports in the `Output/` folder and disp
 ```
 === KINGDOM STATISTICS ===
 
-Kingdom Name: The Cunning Lands
+Kingdom Name: Barony of the Stolen Lands
 Alignment: LawfulGood
 Unrest Level: Worried
 Build Points: 39 (Per Turn: 8)
@@ -151,25 +156,48 @@ Espionage            0               0
 ```
 === CHARACTER BUILD ANALYSIS ===
 
-Character Name: Melaku (Start Game Pregen Paladin Unit)
+Character Name: Valerie
 
 BUILD SUMMARY
 ================================================================================
-Stats: Str 18, Dex 12, Con 14, Int 10, Wis 8, Cha 18
+Stats: Str 14, Dex 14, Con 19, Int 9, Wis 10, Cha 16
 
 Race - Human Race
-Class - Paladin Class 10
+Class - Fighter Class 9 (Tower Shield Specialist Archetype), Rogue Class 1 (Thug Archetype)
+
+
+EQUIPMENT
+================================================================================
+
+Active Weapon Set (Set 1):
+  Main Hand:  Scepter Of Woe (Enhancement 3, Scepter Immunity)
+  Off Hand:   Tower Shield
+
+Armor & Accessories:
+  Body      : Fullplate Standart Plus 2 (Armor Enhancement Bonus 2)
+  Head      : Headband Of Charisma 2 (Charisma 2)
+  Neck      : Amulet Of Natural Armor 2 (Natural Armor Enhancement 2)
+  Belt      : Belt Of Dexterity Constitution 4 (Dexterity 4, Constitution 4)
+  Cloak     : Cloak Wyvern Item (Cloak Of Wyvern Enchantment, Natural Armor Enhancement 2)
+  Ring 1    : Ring Of Protection 2 (Deflection 2)
+  Ring 2    : (unknown)
+  Bracers   : (unknown)
+  Gloves    : Crazy Scientists Gloves Item (Acid Resistance 15 Enchant, Fire Resistance 15 Enchant)
+  Boots     : Boots Of Swift Foot (Speed Increase)
 
 
 LEVEL-BY-LEVEL BUILD HISTORY
 ================================================================================
-Level 0: Power Attack Feature
-Level 1: Toughness, Iomedae Feature
-Level 3: Intimidating Prowess, Mercy Fatigued
-Level 5: Selective Channel
-Level 6: Mercy Diseased
-Level 7: Weapon Focus
-Level 9: Dazzling Display Feature, Mercy Cursed
+Level 0: Toughness
+Level 1: Dodge, Exotic Weapon Proficiency Selection, Bastard Sword Proficiency
+Level 2: Weapon Focus
+Level 3: Dazzling Display Feature
+Level 4: Outflank
+Level 5: Power Attack Feature
+Level 6: Shatter Defenses
+Level 7: Cornugon Smash
+Level 8: Blind Fight
+Level 9: Diehard
 ```
 
 ### All Characters Output
@@ -248,7 +276,8 @@ The application is designed to be maintainable and extensible:
 - **Models**: POCOs representing save file structure
 - **Services**: 
   - `RefResolver`: Handles JSON `$id` and `$ref` pointer resolution
-  - `EnhancedCharacterParser`: Parses character builds using dynamic JSON traversal
+  - `CharacterParser`: Parses character builds using dynamic JSON traversal
+  - `EquipmentParser`: Extracts equipped items, weapons, and armor with enchantments
   - `KingdomStatsParser`: Extracts kingdom statistics
   - `BlueprintLookupService`: Resolves GUIDs to human-readable names
   - `SaveFileInspector`: Provides file metadata
