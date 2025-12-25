@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using PathfinderSaveParser.Models;
 using PathfinderSaveParser.Services;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace PathfinderSaveParser;
 
@@ -16,6 +17,12 @@ class Program
 
         try
         {
+            // Load configuration
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true)
+                .Build();
+
             // Determine save game directory
             string saveGameDir;
             if (args.Length > 0)
@@ -27,18 +34,110 @@ class Program
                 saveGameDir = Path.Combine(Directory.GetCurrentDirectory(), "SavedGame");
             }
 
+            // Ensure SavedGame directory exists
             if (!Directory.Exists(saveGameDir))
             {
-                Console.WriteLine($"Error: Directory not found: {saveGameDir}");
-                Console.WriteLine();
-                Console.WriteLine("Usage: PathfinderSaveParser [path_to_SavedGame_folder]");
-                Console.WriteLine("If no path is provided, will look for 'SavedGame' folder in current directory.");
-                return;
+                Directory.CreateDirectory(saveGameDir);
+                Console.WriteLine($"Created directory: {saveGameDir}");
             }
 
             var playerJsonPath = Path.Combine(saveGameDir, "player.json");
             var partyJsonPath = Path.Combine(saveGameDir, "party.json");
 
+            // Check what we have in the directory
+            bool hasJsonFiles = File.Exists(playerJsonPath) && File.Exists(partyJsonPath);
+            bool hasZksFile = Directory.GetFiles(saveGameDir, "*.zks").Any();
+
+            if (!hasJsonFiles)
+            {
+                Console.WriteLine("JSON save files not found (party.json or player.json). Checking for .zks archives...");
+                Console.WriteLine();
+
+                string? zksFileToExtract = null;
+
+                if (hasZksFile)
+                {
+                    // Use the .zks file in the SavedGame folder
+                    zksFileToExtract = Directory.GetFiles(saveGameDir, "*.zks").FirstOrDefault();
+                    Console.WriteLine($"Found save archive: {Path.GetFileName(zksFileToExtract)}");
+                }
+                else
+                {
+                    // Try to find save from default Pathfinder location
+                    var defaultSavePath = config["PathfinderSaveLocation"];
+                    if (!string.IsNullOrEmpty(defaultSavePath))
+                    {
+                        defaultSavePath = Environment.ExpandEnvironmentVariables(defaultSavePath);
+                        Console.WriteLine($"Searching for saves in: {defaultSavePath}");
+
+                        // Check if a specific default save file is configured
+                        var defaultSaveFile = config["DefaultSaveFile"];
+                        if (!string.IsNullOrEmpty(defaultSaveFile))
+                        {
+                            var specificSavePath = Path.Combine(defaultSavePath, defaultSaveFile);
+                            if (File.Exists(specificSavePath))
+                            {
+                                zksFileToExtract = specificSavePath;
+                                Console.WriteLine($"Found configured save: {Path.GetFileName(zksFileToExtract)}");
+                                Console.WriteLine($"Modified: {File.GetLastWriteTime(zksFileToExtract)}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Configured save '{defaultSaveFile}' not found, searching for latest save...");
+                                zksFileToExtract = SaveFileExtractor.FindLatestSaveFile(defaultSavePath);
+                                
+                                if (zksFileToExtract != null)
+                                {
+                                    Console.WriteLine($"Found latest save: {Path.GetFileName(zksFileToExtract)}");
+                                    Console.WriteLine($"Modified: {File.GetLastWriteTime(zksFileToExtract)}");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // No specific file configured, find latest
+                            zksFileToExtract = SaveFileExtractor.FindLatestSaveFile(defaultSavePath);
+
+                            if (zksFileToExtract != null)
+                            {
+                                Console.WriteLine($"Found latest save: {Path.GetFileName(zksFileToExtract)}");
+                                Console.WriteLine($"Modified: {File.GetLastWriteTime(zksFileToExtract)}");
+                            }
+                        }
+
+                        if (zksFileToExtract == null)
+                        {
+                            Console.WriteLine("No save files found in default location.");
+                        }
+                    }
+                }
+
+                if (zksFileToExtract != null)
+                {
+                    Console.WriteLine();
+                    if (!SaveFileExtractor.ExtractSaveFile(zksFileToExtract, saveGameDir))
+                    {
+                        Console.WriteLine("Failed to extract save file.");
+                        return;
+                    }
+                    Console.WriteLine();
+                }
+                else
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("No save files found to process.");
+                    Console.WriteLine();
+                    Console.WriteLine("Options:");
+                    Console.WriteLine("  1. Copy player.json and party.json to the SavedGame folder");
+                    Console.WriteLine("  2. Copy a .zks save file to the SavedGame folder");
+                    Console.WriteLine($"  3. Configure PathfinderSaveLocation in appsettings.json");
+                    Console.WriteLine();
+                    Console.WriteLine("Usage: PathfinderSaveParser [path_to_save_folder_or_zks_file]");
+                    return;
+                }
+            }
+
+            // Verify JSON files now exist
             if (!File.Exists(playerJsonPath))
             {
                 Console.WriteLine($"Error: player.json not found at {playerJsonPath}");

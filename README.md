@@ -30,20 +30,43 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 
 ## Quick Start
 
-1. **Extract your save files:**
-   - Go to `%USERPROFILE%\AppData\LocalLow\Owlcat Games\Pathfinder Kingmaker\Saved Games\[YourSave]`
-   - Extract your `.zks` save file (e.g., `Auto_1.zks`) using 7-Zip or WinRAR
-   - Copy `player.json` and `party.json` to the `SavedGame/` folder
-
-2. **Run the parser:**
+1. **Run the parser:**
    ```bash
-   cd SaveFeatParser
    dotnet run --project PathfinderSaveParser
    ```
+
+2. **The parser will automatically find your save files:**
+   - **Scenario 1**: If `player.json` and `party.json` exist in the `SavedGame/` folder → processes them directly
+   - **Scenario 2**: If `.zks` save files are in the `SavedGame/` folder → extracts and processes them
+   - **Scenario 3**: If `SavedGame/` is empty → searches your default Pathfinder save location and extracts the most recent save
 
 3. **View results:**
    - Check console output for full reports
    - Find saved reports in `Output/kingdom_stats.txt` and `Output/all_characters.txt`
+
+### Configuration (Optional)
+
+Edit `appsettings.json` to customize save file handling:
+
+```json
+{
+  "PathfinderSaveLocation": "%USERPROFILE%\\AppData\\LocalLow\\Owlcat Games\\Pathfinder Kingmaker\\Saved Games",
+  "DefaultSaveFile": "Auto_1.zks"
+}
+```
+
+- **PathfinderSaveLocation**: Default location to search for save files (supports environment variables)
+  - Windows: `%USERPROFILE%\AppData\LocalLow\Owlcat Games\Pathfinder Kingmaker\Saved Games`
+  - Linux: `~/.config/unity3d/Owlcat Games/Pathfinder Kingmaker/Saved Games`
+  - macOS: `~/Library/Application Support/unity3d/Owlcat Games/Pathfinder Kingmaker/Saved Games`
+- **DefaultSaveFile**: Specific save file to use (e.g., "Auto_1.zks", "Manual_3.zks")
+  - If specified and exists → uses that exact save file
+  - If specified but doesn't exist → falls back to the most recently modified save
+  - If empty or not specified → always uses the most recently modified save
+
+**Manual Options:**
+- Copy extracted `player.json` and `party.json` to `SavedGame/` folder, or
+- Copy a `.zks` save file to `SavedGame/` folder
 
 ## Project Structure
 
@@ -52,28 +75,30 @@ PathfinderKingmakerSaveBuildParser/
 ├── PathfinderSaveParser.sln          # Solution file
 ├── PathfinderSaveParser/
 │   ├── PathfinderSaveParser.csproj   # Main project file
+│   ├── appsettings.json              # Configuration (default save location)
 │   ├── blueprint_database.json       # Blueprint name database (45,632+ entries)
+│   ├── README.txt                     # End-user instructions (copied to output)
 │   ├── Program.cs                     # Main entry point
 │   ├── Models/
 │   │   ├── SaveFileModels.cs         # Kingdom & player save models
 │   │   └── CharacterModels.cs        # Character & progression models
-│   └── Services/
-│       ├── KingdomStatsParser.cs     # Kingdom statistics parser
-│       ├── CharacterParser.cs        # Character build parser with $ref resolution
-│       ├── EquipmentParser.cs        # Equipment and item parser
-│       ├── RefResolver.cs            # JSON $ref pointer resolver
-│       ├── BlueprintLookupService.cs # Blueprint GUID to name resolver
-│       └── SaveFileInspector.cs      # Save file metadata inspector
+│   ├── Services/
+│   │   ├── KingdomStatsParser.cs     # Kingdom statistics parser
+│   │   ├── CharacterParser.cs        # Character build parser with $ref resolution
+│   │   ├── EquipmentParser.cs        # Equipment and item parser
+│   │   ├── SaveFileExtractor.cs      # .zks save file extraction service
+│   │   ├── RefResolver.cs            # JSON $ref pointer resolver
+│   │   ├── BlueprintLookupService.cs # Blueprint GUID to name resolver
+│   │   └── SaveFileInspector.cs      # Save file metadata inspector
+│   ├── SavedGame/                     # Extracted save files location (auto-created)
+│   │   └── README.txt                 # Instructions for save file placement
+│   └── Output/                        # Generated reports (auto-created on build)
+│       ├── kingdom_stats.txt
+│       └── all_characters.txt
 ├── BlueprintBuilder/
 │   └── Program.cs                     # Utility to rebuild blueprint database
-├── Blueprints2.1.4/                   # Blueprint dump folder (not in repository)
-│   └── Blueprints.txt                 # Game blueprint definitions
-├── SavedGame/                         # Place extracted save files here (not in repository)
-│   ├── player.json
-│   └── party.json
-└── Output/                            # Generated reports appear here (not in repository)
-    ├── kingdom_stats.txt
-    └── all_characters.txt
+└── Blueprints2.1.4/                   # Blueprint dump folder (not in repository)
+    └── Blueprints.txt                 # Game blueprint definitions
 ```
 
 ## Getting Started
@@ -92,12 +117,10 @@ PathfinderKingmakerSaveBuildParser/
    dotnet restore
    ```
 
-3. **Extract your save files:**
-   - Navigate to your Pathfinder: Kingmaker save folder, typically located at:
-     - Windows: `%USERPROFILE%\AppData\LocalLow\Owlcat Games\Pathfinder Kingmaker\Saved Games\[YourSave]`
-   - **Important**: Save files are stored as `.zks` archives (e.g., `Auto_1.zks`, `Manual_1.zks`)
-   - Extract the `.zks` archive using a tool like 7-Zip, WinRAR, or any ZIP-compatible archiver
-   - Copy the extracted `player.json` and `party.json` files to the `SavedGame/` folder in this project
+3. **Run the parser:**
+   - The application automatically finds and extracts `.zks` save files
+   - No manual extraction needed - just run the parser and it will handle everything
+   - Optionally configure `DefaultSaveFile` in `appsettings.json` to use a specific save file
 
 ### Usage
 
@@ -114,8 +137,17 @@ dotnet run --project PathfinderSaveParser -- "C:\Path\To\Extracted\SavedGame"
 #### Option 3: Build and run executable
 ```bash
 dotnet build -c Release
-cd PathfinderSaveParser\bin\Release\net8.0
+cd PathfinderSaveParser/bin/Release/net8.0
+
+# Windows:
 PathfinderSaveParser.exe
+
+# Linux/macOS:
+chmod +x PathfinderSaveParser  # First time only
+./PathfinderSaveParser
+
+# Or use .NET directly on any platform:
+dotnet PathfinderSaveParser.dll
 ```
 
 ### Output
@@ -250,10 +282,13 @@ The application is designed to be maintainable and extensible:
 ## Troubleshooting
 
 ### Save Files Not Loading
-- Ensure you've **extracted** the `.zks` archive first (save files are compressed)
-- Verify `player.json` and `party.json` are in the `SavedGame/` folder
-- Check that the files are valid JSON (not corrupted)
-- Verify you have read permissions for the files
+- The application automatically extracts `.zks` archives - no manual extraction needed
+- If automatic extraction fails:
+  - Verify the `PathfinderSaveLocation` path in `appsettings.json` is correct
+  - Ensure the `.zks` file exists in either the `SavedGame/` folder or default Pathfinder location
+  - Check that you have read permissions for the save files and folders
+- If `DefaultSaveFile` is configured but not found, the parser falls back to the most recent save
+- Check the console output for detailed extraction status and error messages
 
 ### Missing Character Data
 - The parser uses reference resolution to handle `$id` and `$ref` patterns
@@ -270,7 +305,10 @@ The application is designed to be maintainable and extensible:
 ## Technical Details
 
 ### Dependencies
-- **Newtonsoft.Json** (v13.0.3): JSON serialization/deserialization
+- **Newtonsoft.Json** (v13.0.4): JSON serialization/deserialization
+- **Microsoft.Extensions.Configuration** (v8.0.0): Configuration file support
+- **Microsoft.Extensions.Configuration.Json** (v8.0.0): JSON configuration provider
+- **System.IO.Compression**: ZIP archive extraction for .zks files
 - **.NET 8.0**: Runtime framework
 
 ### Architecture
@@ -280,16 +318,22 @@ The application is designed to be maintainable and extensible:
   - `CharacterParser`: Parses character builds using dynamic JSON traversal
   - `EquipmentParser`: Extracts equipped items, weapons, and armor with enchantments
   - `KingdomStatsParser`: Extracts kingdom statistics
+  - `SaveFileExtractor`: Automatically extracts `.zks` archives and locates save files
   - `BlueprintLookupService`: Resolves GUIDs to human-readable names
   - `SaveFileInspector`: Provides file metadata
-- **Program**: Entry point and orchestration
+- **Program**: Entry point and orchestration with three-tier automatic save file loading
 
 ### Key Features
+- **Automatic Save File Loading**: Three-tier system automatically finds and extracts save files:
+  1. Checks for JSON files in SavedGame folder
+  2. Extracts .zks archives from SavedGame folder
+  3. Searches default Pathfinder location and extracts the most recent save (or configured default)
 - **Reference Resolution**: The parser handles Pathfinder's complex `$id`/`$ref` pattern, which is essential for parsing companion data
 - **Blueprint Database**: 45,632+ entries provide comprehensive name resolution
 - **Name Normalization**: Automatic PascalCase to readable format conversion (e.g., "PowerAttackFeature" → "Power Attack Feature")
 - **Custom Names**: Displays custom character names alongside blueprint names
 - **Filtering**: Removes 34,000+ unnecessary dialog/cutscene entries from the database
+- **Configurable Defaults**: Optionally specify a preferred save file in appsettings.json
 
 ### Save File Structure
 Pathfinder: Kingmaker uses a unique save format:
