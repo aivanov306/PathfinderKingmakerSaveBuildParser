@@ -13,6 +13,9 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+# Release builds (created by build-releases scripts)
+releases/
+
 # Visual Studio cache/options
 .vs/
 .vscode/
