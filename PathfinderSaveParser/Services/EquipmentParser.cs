@@ -78,13 +78,13 @@ public class EquipmentParser
             // Primary hand
             var primaryRef = activeSet["PrimaryHand"];
             var primary = GetItemFromSlot(primaryRef);
-            var primaryInfo = primary != null ? GetItemInfo(primary) : "(empty)";
+            var primaryInfo = GetItemInfo(primary);
             sb.AppendLine($"  Main Hand:  {primaryInfo}");
             
             // Secondary hand
             var secondaryRef = activeSet["SecondaryHand"];
             var secondary = GetItemFromSlot(secondaryRef);
-            var secondaryInfo = secondary != null ? GetItemInfo(secondary) : "(empty)";
+            var secondaryInfo = GetItemInfo(secondary);
             sb.AppendLine($"  Off Hand:   {secondaryInfo}");
         }
     }
@@ -114,7 +114,7 @@ public class EquipmentParser
         {
             var itemRef = body[slot.Key];
             var item = GetItemFromSlot(itemRef);
-            var itemInfo = item != null ? GetItemInfo(item) : "(empty)";
+            var itemInfo = GetItemInfo(item);
             
             sb.AppendLine($"  {slot.Value,-10}: {itemInfo}");
         }
@@ -122,29 +122,60 @@ public class EquipmentParser
 
     private JToken? GetItemFromSlot(JToken? slotRef)
     {
+        if (slotRef == null || slotRef.Type == JTokenType.Null)
+        {
+            return null; // Slot reference doesn't exist
+        }
+        
         var slot = _resolver.Resolve(slotRef);
-        if (slot == null) return null;
+        if (slot == null || slot.Type == JTokenType.Null)
+        {
+            return null; // Slot is empty
+        }
         
         // Check if slot is a reference-only object (just has $ref) or actual slot object
         if (slot is JObject slotObj && slotObj.Property("m_Item") != null)
         {
             var itemRef = slotObj["m_Item"];
+            if (itemRef == null || itemRef.Type == JTokenType.Null)
+            {
+                return null; // Slot exists but has no item
+            }
             return _resolver.Resolve(itemRef);
         }
         
         return null;
     }
 
-    private string GetItemInfo(JToken item)
+    private string GetItemInfo(JToken? item)
     {
-        // Ensure item is a JObject before accessing properties
-        if (item == null || !(item is JObject itemObj))
+        // Item is null means slot is empty
+        if (item == null)
         {
-            return "(unknown)";
+            return "(empty)";
+        }
+        
+        // Item is not a JObject means we got unexpected data
+        if (!(item is JObject itemObj))
+        {
+            return "(empty)";
         }
         
         var blueprintId = itemObj["m_Blueprint"]?.ToString();
+        
+        // If we can't get a blueprint ID, the item data is malformed
+        if (string.IsNullOrEmpty(blueprintId))
+        {
+            return "(empty)";
+        }
+        
         var itemName = _blueprintLookup.GetName(blueprintId);
+        
+        // If blueprint lookup fails, show as unknown
+        if (string.IsNullOrEmpty(itemName) || itemName.StartsWith("Blueprint_"))
+        {
+            return $"(unknown item: {blueprintId.Substring(0, Math.Min(8, blueprintId.Length))}...)";
+        }
         
         // Get enchantments
         var enchantments = new List<string>();

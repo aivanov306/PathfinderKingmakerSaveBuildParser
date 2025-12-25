@@ -12,6 +12,7 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
   - Active weapon set (main hand and off-hand)
   - All armor and accessory slots (body, head, neck, belt, cloak, rings, bracers, gloves, boots)
   - Item enchantments displayed inline
+  - Distinguishes between empty slots, shields, and dual-wielding configurations
 - **Level-by-Level Build History**: Detailed progression showing features, feats, and abilities acquired at each level
 
 ### Kingdom Statistics
@@ -180,8 +181,8 @@ Armor & Accessories:
   Belt      : Belt Of Dexterity Constitution 4 (Dexterity 4, Constitution 4)
   Cloak     : Cloak Wyvern Item (Cloak Of Wyvern Enchantment, Natural Armor Enhancement 2)
   Ring 1    : Ring Of Protection 2 (Deflection 2)
-  Ring 2    : (unknown)
-  Bracers   : (unknown)
+  Ring 2    : (empty)
+  Bracers   : (empty)
   Gloves    : Crazy Scientists Gloves Item (Acid Resistance 15 Enchant, Fire Resistance 15 Enchant)
   Boots     : Boots Of Swift Foot (Speed Increase)
 

@@ -20,4 +20,9 @@
     </None>
   </ItemGroup>
 
+  <Target Name="CreateOutputDirectories" AfterTargets="Build">
+    <MakeDir Directories="$(OutputPath)SavedGame" Condition="!Exists('$(OutputPath)SavedGame')" />
+    <MakeDir Directories="$(OutputPath)Output" Condition="!Exists('$(OutputPath)Output')" />
+  </Target>
+
 </Project>
