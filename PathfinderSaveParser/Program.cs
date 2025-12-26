@@ -23,6 +23,16 @@ class Program
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
 
+            // Load report options from config
+            var reportOptions = new ReportOptions();
+            config.GetSection("ReportOptions").Bind(reportOptions);
+            
+            Console.WriteLine($"Report Options Loaded:");
+            Console.WriteLine($"  Include Stats: {reportOptions.IncludeStats}");
+            Console.WriteLine($"  Include Equipment: {reportOptions.IncludeEquipment}");
+            Console.WriteLine($"  Show Feat Parameters: {reportOptions.ShowFeatParameters}");
+            Console.WriteLine();
+
             // Determine save game directory
             string saveGameDir;
             if (args.Length > 0)
@@ -192,7 +202,7 @@ class Program
             // Create RefResolver for party.json
             Console.WriteLine("Indexing party.json references...");
             var partyResolver = new RefResolver(partyJson);
-            var enhancedParser = new EnhancedCharacterParser(blueprintLookup, partyResolver);
+            var enhancedParser = new EnhancedCharacterParser(blueprintLookup, partyResolver, reportOptions);
             Console.WriteLine("Reference indexing complete.");
             Console.WriteLine();
             Console.WriteLine(new string('=', 80));
@@ -203,7 +213,7 @@ class Program
             Directory.CreateDirectory(outputDir);
 
             // Parse Kingdom Stats
-            if (playerSave.Kingdom != null)
+            if (reportOptions.IncludeKingdomStats && playerSave.Kingdom != null)
             {
                 var kingdomReport = kingdomParser.ParseKingdomStats(playerSave.Kingdom);
                 var kingdomOutputPath = Path.Combine(outputDir, "kingdom_stats.txt");
@@ -211,6 +221,10 @@ class Program
                 Console.WriteLine(kingdomReport);
                 Console.WriteLine();
                 Console.WriteLine(new string('=', 80));
+            }
+            else if (!reportOptions.IncludeKingdomStats)
+            {
+                Console.WriteLine("Kingdom stats disabled in configuration.");
             }
             else
             {

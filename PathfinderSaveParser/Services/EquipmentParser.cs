@@ -1,5 +1,6 @@
 using Newtonsoft.Json.Linq;
 using System.Text;
+using PathfinderSaveParser.Models;
 
 namespace PathfinderSaveParser.Services;
 
@@ -10,11 +11,13 @@ public class EquipmentParser
 {
     private readonly BlueprintLookupService _blueprintLookup;
     private readonly RefResolver _resolver;
+    private readonly ReportOptions _options;
 
-    public EquipmentParser(BlueprintLookupService blueprintLookup, RefResolver resolver)
+    public EquipmentParser(BlueprintLookupService blueprintLookup, RefResolver resolver, ReportOptions options)
     {
         _blueprintLookup = blueprintLookup;
         _resolver = resolver;
+        _options = options;
     }
 
     public string ParseEquipment(JToken? descriptor)
@@ -51,10 +54,16 @@ public class EquipmentParser
         sb.AppendLine(new string('=', 80));
         
         // Parse active weapon set only
-        ParseActiveWeaponSet(body, sb);
+        if (_options.IncludeActiveWeaponSet)
+        {
+            ParseActiveWeaponSet(body, sb);
+        }
         
         // Parse armor and accessories
-        ParseArmorAndAccessories(body, sb);
+        if (_options.IncludeArmor || _options.IncludeAccessories)
+        {
+            ParseArmorAndAccessories(body, sb);
+        }
         
         return sb.ToString();
     }
@@ -96,27 +105,38 @@ public class EquipmentParser
         sb.AppendLine();
         sb.AppendLine("Armor & Accessories:");
         
-        var slots = new Dictionary<string, string>
+        var slots = new Dictionary<string, (string slotKey, string displayName, bool isArmor)>
         {
-            { "Armor", "Body" },
-            { "Head", "Head" },
-            { "Neck", "Neck" },
-            { "Belt", "Belt" },
-            { "Shoulders", "Cloak" },
-            { "Ring1", "Ring 1" },
-            { "Ring2", "Ring 2" },
-            { "Wrist", "Bracers" },
-            { "Gloves", "Gloves" },
-            { "Feet", "Boots" }
+            { "Armor", ("Armor", "Body", true) },
+            { "Head", ("Head", "Head", false) },
+            { "Neck", ("Neck", "Neck", false) },
+            { "Belt", ("Belt", "Belt", false) },
+            { "Shoulders", ("Shoulders", "Cloak", false) },
+            { "Ring1", ("Ring1", "Ring 1", false) },
+            { "Ring2", ("Ring2", "Ring 2", false) },
+            { "Wrist", ("Wrist", "Bracers", false) },
+            { "Gloves", ("Gloves", "Gloves", false) },
+            { "Feet", ("Feet", "Boots", false) }
         };
 
         foreach (var slot in slots)
         {
-            var itemRef = body[slot.Key];
+            var (slotKey, displayName, isArmor) = slot.Value;
+            
+            // Skip if armor is disabled and this is armor slot
+            if (isArmor && !_options.IncludeArmor) continue;
+            
+            // Skip if accessories are disabled and this is not armor slot
+            if (!isArmor && !_options.IncludeAccessories) continue;
+            
+            var itemRef = body[slotKey];
             var item = GetItemFromSlot(itemRef);
             var itemInfo = GetItemInfo(item);
             
-            sb.AppendLine($"  {slot.Value,-10}: {itemInfo}");
+            // Skip empty slots if ShowEmptySlots is false
+            if (!_options.ShowEmptySlots && itemInfo == "(empty)") continue;
+            
+            sb.AppendLine($"  {displayName,-10}: {itemInfo}");
         }
     }
 
@@ -177,7 +197,12 @@ public class EquipmentParser
             return $"(unknown item: {blueprintId.Substring(0, Math.Min(8, blueprintId.Length))}...)";
         }
         
-        // Get enchantments
+        // Get enchantments if option is enabled
+        if (!_options.ShowEnchantments)
+        {
+            return itemName;
+        }
+        
         var enchantments = new List<string>();
         var enchantmentsRef = itemObj["m_Enchantments"];
         var enchantmentsObj = _resolver.Resolve(enchantmentsRef);

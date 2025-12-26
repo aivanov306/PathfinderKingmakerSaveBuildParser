@@ -46,7 +46,9 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 
 ### Configuration (Optional)
 
-Edit `appsettings.json` to customize save file handling:
+Edit `appsettings.json` to customize save file handling and report output:
+
+#### File Location Settings
 
 ```json
 {
@@ -63,6 +65,32 @@ Edit `appsettings.json` to customize save file handling:
   - If specified and exists → uses that exact save file
   - If specified but doesn't exist → falls back to the most recently modified save
   - If empty or not specified → always uses the most recently modified save
+
+#### Report Options
+
+Control what information is included in generated reports:
+
+```json
+"ReportOptions": {
+  "IncludeStats": true,              // Character ability scores (Str, Dex, etc.)
+  "IncludeRace": true,               // Character race
+  "IncludeClass": true,              // Classes, levels, and archetypes
+  "IncludeEquipment": true,          // All equipment sections
+  "IncludeLevelHistory": true,       // Level-by-level feat progression
+  "IncludeKingdomStats": true,       // Kingdom statistics report
+  "IncludeActiveWeaponSet": true,    // Currently equipped weapons
+  "IncludeArmor": true,              // Equipped armor
+  "IncludeAccessories": true,        // Rings, belts, cloaks, etc.
+  "ShowEmptySlots": true,            // Display empty equipment slots
+  "ShowEnchantments": true,          // Show item enchantments in parentheses
+  "ShowFeatParameters": true         // Show weapon types/schools in feat names
+}
+```
+
+**Examples:**
+- Minimal output (classes only): Set `IncludeStats`, `IncludeEquipment`, `IncludeLevelHistory` to `false`
+- Equipment focus: Set `IncludeStats`, `IncludeRace`, `IncludeClass`, `IncludeLevelHistory` to `false`
+- Clean view: Set `ShowEmptySlots` and `ShowEnchantments` to `false`
 
 **Manual Options:**
 - Copy extracted `player.json` and `party.json` to `SavedGame/` folder, or

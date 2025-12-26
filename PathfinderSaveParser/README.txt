@@ -51,6 +51,8 @@ No manual extraction needed - just run the parser!
 
 Edit appsettings.json to customize behavior:
 
+FILE LOCATION SETTINGS
+----------------------
 {
   "PathfinderSaveLocation": "path/to/your/saves",
   "DefaultSaveFile": "Auto_1.zks"
@@ -61,6 +63,32 @@ Edit appsettings.json to customize behavior:
   * If specified and exists → uses that exact save
   * If specified but missing → falls back to most recent save
   * If empty → always uses most recent save
+
+
+REPORT OPTIONS
+--------------
+Control what information appears in generated reports:
+
+"ReportOptions": {
+  "IncludeStats": true,              // Character ability scores
+  "IncludeRace": true,               // Character race
+  "IncludeClass": true,              // Classes and archetypes
+  "IncludeEquipment": true,          // All equipment sections
+  "IncludeLevelHistory": true,       // Level-by-level progression
+  "IncludeKingdomStats": true,       // Kingdom statistics
+  "IncludeActiveWeaponSet": true,    // Current weapon set
+  "IncludeArmor": true,              // Equipped armor
+  "IncludeAccessories": true,        // Rings, belts, etc.
+  "ShowEmptySlots": true,            // Display empty equipment slots
+  "ShowEnchantments": true,          // Show item enchantments
+  "ShowFeatParameters": true         // Show weapon types in feats
+}
+
+EXAMPLE: Minimal output (just class info):
+  Set IncludeStats, IncludeEquipment, IncludeLevelHistory to false
+
+EXAMPLE: Clean equipment view:
+  Set ShowEmptySlots and ShowEnchantments to false
 
 
 ================================================================================

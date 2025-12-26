@@ -42,6 +42,9 @@ public class Kingdom
 
     [JsonProperty("Unrest")]
     public string? Unrest { get; set; }
+
+    [JsonProperty("CurrentTurn")]
+    public int CurrentTurn { get; set; }
 }
 
 public class KingdomStatsContainer

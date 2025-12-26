@@ -1,5 +1,6 @@
 using Newtonsoft.Json.Linq;
 using System.Text;
+using PathfinderSaveParser.Models;
 
 namespace PathfinderSaveParser.Services;
 
@@ -10,11 +11,13 @@ public class EnhancedCharacterParser
 {
     private readonly BlueprintLookupService _blueprintLookup;
     private readonly RefResolver _resolver;
+    private readonly ReportOptions _options;
 
-    public EnhancedCharacterParser(BlueprintLookupService blueprintLookup, RefResolver resolver)
+    public EnhancedCharacterParser(BlueprintLookupService blueprintLookup, RefResolver resolver, ReportOptions options)
     {
         _blueprintLookup = blueprintLookup;
         _resolver = resolver;
+        _options = options;
     }
 
     public List<string> ParseAllCharacters(JToken partyJson)
@@ -90,86 +93,101 @@ public class EnhancedCharacterParser
         sb.AppendLine(new string('=', 80));
 
         // Stats
-        var statsRef = descriptor["Stats"];
-        var stats = _resolver.Resolve(statsRef);
-        if (stats != null)
+        if (_options.IncludeStats)
         {
-            sb.Append("Stats: ");
-            sb.Append($"Str {GetStatValue(stats, "Strength")}, ");
-            sb.Append($"Dex {GetStatValue(stats, "Dexterity")}, ");
-            sb.Append($"Con {GetStatValue(stats, "Constitution")}, ");
-            sb.Append($"Int {GetStatValue(stats, "Intelligence")}, ");
-            sb.Append($"Wis {GetStatValue(stats, "Wisdom")}, ");
-            sb.Append($"Cha {GetStatValue(stats, "Charisma")}");
-            sb.AppendLine();
-            sb.AppendLine();
+            var statsRef = descriptor["Stats"];
+            var stats = _resolver.Resolve(statsRef);
+            if (stats != null)
+            {
+                sb.Append("Stats: ");
+                sb.Append($"Str {GetStatValue(stats, "Strength")}, ");
+                sb.Append($"Dex {GetStatValue(stats, "Dexterity")}, ");
+                sb.Append($"Con {GetStatValue(stats, "Constitution")}, ");
+                sb.Append($"Int {GetStatValue(stats, "Intelligence")}, ");
+                sb.Append($"Wis {GetStatValue(stats, "Wisdom")}, ");
+                sb.Append($"Cha {GetStatValue(stats, "Charisma")}");
+                sb.AppendLine();
+                sb.AppendLine();
+            }
         }
 
         // Race
-        string? raceId = progression["m_Race"]?.ToString();
-        if (!string.IsNullOrEmpty(raceId))
+        if (_options.IncludeRace)
         {
-            sb.AppendLine($"Race - {_blueprintLookup.GetName(raceId)}");
+            string? raceId = progression["m_Race"]?.ToString();
+            if (!string.IsNullOrEmpty(raceId))
+            {
+                sb.AppendLine($"Race - {_blueprintLookup.GetName(raceId)}");
+            }
         }
 
         // Classes
-        var classes = progression["Classes"];
-        if (classes != null && classes.HasValues)
+        if (_options.IncludeClass)
         {
-            sb.Append("Class - ");
-            var classParts = new List<string>();
-            foreach (var c in classes)
+            var classes = progression["Classes"];
+            if (classes != null && classes.HasValues)
             {
-                string? classId = c["CharacterClass"]?.ToString();
-                string? level = c["Level"]?.ToString();
-                string className = _blueprintLookup.GetName(classId ?? "");
-                
-                var classPart = $"{className} {level}";
-                
-                var archetypes = c["Archetypes"];
-                if (archetypes != null && archetypes.HasValues)
+                sb.Append("Class - ");
+                var classParts = new List<string>();
+                foreach (var c in classes)
                 {
-                    var archNames = new List<string>();
-                    foreach (var arch in archetypes)
+                    string? classId = c["CharacterClass"]?.ToString();
+                    string? level = c["Level"]?.ToString();
+                    string className = _blueprintLookup.GetName(classId ?? "");
+                    
+                    var classPart = $"{className} {level}";
+                    
+                    var archetypes = c["Archetypes"];
+                    if (archetypes != null && archetypes.HasValues)
                     {
-                        archNames.Add(_blueprintLookup.GetName(arch.ToString()));
+                        var archNames = new List<string>();
+                        foreach (var arch in archetypes)
+                        {
+                            archNames.Add(_blueprintLookup.GetName(arch.ToString()));
+                        }
+                        if (archNames.Any())
+                        {
+                            classPart += $" ({string.Join(", ", archNames)})";
+                        }
                     }
-                    if (archNames.Any())
-                    {
-                        classPart += $" ({string.Join(", ", archNames)})";
-                    }
+                    
+                    classParts.Add(classPart);
                 }
-                
-                classParts.Add(classPart);
+                sb.AppendLine(string.Join(", ", classParts));
             }
-            sb.AppendLine(string.Join(", ", classParts));
         }
 
         sb.AppendLine();
         sb.AppendLine();
 
         // Equipment
-        try
+        if (_options.IncludeEquipment)
         {
-            var equipmentParser = new EquipmentParser(_blueprintLookup, _resolver);
-            var equipmentReport = equipmentParser.ParseEquipment(descriptor);
-            if (!string.IsNullOrEmpty(equipmentReport))
+            try
             {
-                sb.AppendLine(equipmentReport);
-                sb.AppendLine();
+                var equipmentParser = new EquipmentParser(_blueprintLookup, _resolver, _options);
+                var equipmentReport = equipmentParser.ParseEquipment(descriptor);
+                if (!string.IsNullOrEmpty(equipmentReport))
+                {
+                    sb.AppendLine(equipmentReport);
+                    sb.AppendLine();
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Warning: Failed to parse equipment: {ex.Message}");
-            Console.WriteLine($"  Stack: {ex.StackTrace?.Split('\n')[0]}");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to parse equipment: {ex.Message}");
+                Console.WriteLine($"  Stack: {ex.StackTrace?.Split('\n')[0]}");
+            }
         }
 
         // Level-by-Level History
-        sb.AppendLine("LEVEL-BY-LEVEL BUILD HISTORY");
-        sb.AppendLine(new string('=', 80));
-        
-        ParseHistoryWithParams(progression["m_Selections"], progression, sb);
+        if (_options.IncludeLevelHistory)
+        {
+            sb.AppendLine("LEVEL-BY-LEVEL BUILD HISTORY");
+            sb.AppendLine(new string('=', 80));
+            
+            ParseHistoryWithParams(progression["m_Selections"], progression, sb);
+        }
 
         return sb.ToString();
     }
@@ -295,7 +313,7 @@ public class EnhancedCharacterParser
                             {
                                 // Check if this feature has parameters
                                 string displayName = name;
-                                if (featureParams.TryGetValue(guid, out var param))
+                                if (_options.ShowFeatParameters && featureParams.TryGetValue(guid, out var param))
                                 {
                                     var weaponCategory = param["WeaponCategory"]?.ToString();
                                     var spellSchool = param["SpellSchool"]?.ToString();

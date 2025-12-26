@@ -14,7 +14,7 @@ public class KingdomStatsParser
         sb.AppendLine($"Kingdom Name: {kingdom.KingdomName}");
         sb.AppendLine($"Alignment: {kingdom.Alignment}");
         sb.AppendLine($"Unrest Level: {kingdom.Unrest}");
-        sb.AppendLine($"Build Points: {kingdom.BuildPoints} (Per Turn: {kingdom.BuildPointsPerTurn})");
+        sb.AppendLine($"Build Points: {kingdom.BuildPoints} (Per Turn: {kingdom.CurrentTurn})");
         sb.AppendLine();
         sb.AppendLine("Kingdom Stats:");
         sb.AppendLine("".PadRight(60, '-'));
