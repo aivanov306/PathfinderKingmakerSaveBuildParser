@@ -189,7 +189,7 @@ public class EquipmentParser
             return "(empty)";
         }
         
-        var itemName = _blueprintLookup.GetName(blueprintId);
+        var (itemName, equipmentType) = _blueprintLookup.GetNameAndType(blueprintId);
         
         // If blueprint lookup fails, show as unknown
         if (string.IsNullOrEmpty(itemName) || itemName.StartsWith("Blueprint_"))
@@ -235,7 +235,19 @@ public class EquipmentParser
         
         if (enchantments.Any())
         {
-            return $"{itemName} ({string.Join(", ", enchantments)})";
+            var enchantmentText = $"({string.Join(", ", enchantments)})";
+            // Add equipment type before enchantments if available
+            if (!string.IsNullOrEmpty(equipmentType))
+            {
+                return $"{itemName} [{equipmentType}] {enchantmentText}";
+            }
+            return $"{itemName} {enchantmentText}";
+        }
+        
+        // Add equipment type if available and no enchantments
+        if (!string.IsNullOrEmpty(equipmentType))
+        {
+            return $"{itemName} [{equipmentType}]";
         }
         
         return itemName;

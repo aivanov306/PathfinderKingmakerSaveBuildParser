@@ -11,6 +11,7 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 - **Equipment**: Shows equipped weapons, armor, and accessories with enchantments
   - Active weapon set (main hand and off-hand)
   - All armor and accessory slots (body, head, neck, belt, cloak, rings, bracers, gloves, boots)
+  - Equipment types displayed in brackets (e.g., [Greatsword], [Fullplate], [Tower Shield])
   - Item enchantments displayed inline
   - Distinguishes between empty slots, shields, and dual-wielding configurations
 - **Spellcasting**: Shows spellcasting information for all spellcaster classes
@@ -31,6 +32,7 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 ### Blueprint Database
 - Comprehensive database with 45,632+ game blueprints
 - Automatic name resolution for features, classes, races, and feats
+- Equipment type information for 2,400+ weapons, armor, and shields
 - Clean, human-readable output with proper spacing
 
 ## Quick Start
@@ -236,11 +238,11 @@ EQUIPMENT
 ================================================================================
 
 Active Weapon Set (Set 1):
-  Main Hand:  Scepter Of Woe (Enhancement 3, Scepter Immunity)
-  Off Hand:   Tower Shield
+  Main Hand:  Scepter Of Woe [Heavy Mace] (Enhancement 3, Scepter Immunity)
+  Off Hand:   Tower Shield [Tower Shield]
 
 Armor & Accessories:
-  Body      : Fullplate Standart Plus 2 (Armor Enhancement Bonus 2)
+  Body      : Fullplate Standart Plus 2 [Fullplate] (Armor Enhancement Bonus 2)
   Head      : Headband Of Charisma 2 (Charisma 2)
   Neck      : Amulet Of Natural Armor 2 (Natural Armor Enhancement 2)
   Belt      : Belt Of Dexterity Constitution 4 (Dexterity 4, Constitution 4)
@@ -278,30 +280,38 @@ The parser extracts complete builds for:
 
 ### Updating the Blueprint Database
 
-The application uses a comprehensive blueprint database (`blueprint_database.json`) with 45,632+ entries extracted from the game files. This database is automatically loaded at startup.
+The application uses a comprehensive blueprint database (`blueprint_database.json`) with 45,632+ blueprint names and 2,400+ equipment types extracted from the game files. This database is automatically loaded at startup.
+
+**Database Structure:**
+- `Names`: Dictionary mapping blueprint GUIDs to readable names (45,632 entries)
+- `EquipmentTypes`: Dictionary mapping equipment GUIDs to weapon/armor/shield types (2,406 entries)
 
 To regenerate the blueprint database (e.g., after a game update):
 
-1. Obtain the updated `Blueprints.txt` file from the game's blueprint dump
+1. Obtain the updated blueprint files from the game's blueprint dump
    - The current dump (v2.1.4) was obtained from [Pathfinder-Kingmaker-Blueprints](https://github.com/jaygumji/ArcemiPathfinderKingmakerTools) repository
    - Credit to the repository author for maintaining these blueprint dumps
 2. Create a folder starting with `Blueprints` (e.g., `Blueprints2.1.4`, `Blueprints2.1.5`) in the solution root directory
 3. Place the `Blueprints.txt` file inside that folder
+   - Ensure the folder also contains the blueprint JSON subfolders (e.g., `Kingmaker.Blueprints.Items.Weapons.BlueprintItemWeapon/`)
 4. Run the BlueprintBuilder utility from the solution root:
    ```bash
    dotnet run --project BlueprintBuilder
    ```
 5. The utility will:
    - Automatically find any folder starting with `Blueprints*`
+   - Extract blueprint names from `Blueprints.txt`
+   - Extract equipment types from weapon, armor, and shield blueprint JSON files
    - Generate `blueprint_database.json` in the `PathfinderSaveParser` folder (if it exists)
    - Otherwise save to the solution root directory
 6. The file will automatically be copied to the output directory during build
 
-The BlueprintBuilder filters out unnecessary entries like:
-- Dialog/cutscene system entries
-- AI actions and conditions
-- Internal debug entries
-- Temporary and deprecated entries
+**What BlueprintBuilder Does:**
+- Filters out unnecessary entries (dialog, cutscene, AI, debug, temporary entries)
+- Normalizes blueprint names (adds spacing, removes redundant suffixes)
+- Extracts weapon types from `BlueprintItemWeapon` JSON files
+- Extracts armor types from `BlueprintItemArmor` JSON files  
+- Extracts shield types from `BlueprintItemShield` JSON files (via armor component references)
 
 ### Extending the Parser
 
