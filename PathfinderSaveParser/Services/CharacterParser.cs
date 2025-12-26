@@ -169,7 +169,7 @@ public class EnhancedCharacterParser
         sb.AppendLine("LEVEL-BY-LEVEL BUILD HISTORY");
         sb.AppendLine(new string('=', 80));
         
-        ParseHistory(progression["m_Selections"], sb);
+        ParseHistoryWithParams(progression["m_Selections"], progression, sb);
 
         return sb.ToString();
     }
@@ -216,6 +216,106 @@ public class EnhancedCharacterParser
                                 !name.StartsWith("Blueprint_"))
                             {
                                 historyMap[level].Add(name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Get class info for level display
+        foreach (var kvp in historyMap)
+        {
+            if (kvp.Value.Count > 0)
+            {
+                sb.AppendLine($"Level {kvp.Key}: {string.Join(", ", kvp.Value)}");
+            }
+        }
+
+        if (!historyMap.Any())
+        {
+            sb.AppendLine("(No level-by-level data available)");
+        }
+    }
+
+    private void ParseHistoryWithParams(JToken? selections, JToken? progression, StringBuilder sb)
+    {
+        if (selections == null) return;
+
+        // Build a map of blueprint GUID -> Param object from the Features collection
+        var featureParams = new Dictionary<string, JToken>();
+        var features = progression?["Features"]?["m_Facts"];
+        if (features != null)
+        {
+            foreach (var feature in features)
+            {
+                var resolved = _resolver.Resolve(feature);
+                if (resolved != null)
+                {
+                    var blueprint = resolved["Blueprint"]?.ToString();
+                    var param = resolved["Param"];
+                    if (!string.IsNullOrEmpty(blueprint) && param != null)
+                    {
+                        featureParams[blueprint] = param;
+                    }
+                }
+            }
+        }
+
+        var historyMap = new SortedDictionary<int, List<string>>();
+
+        foreach (var item in selections)
+        {
+            var selectionValue = item["Value"];
+            var selectionsByLevel = selectionValue?["m_SelectionsByLevel"];
+
+            if (selectionsByLevel != null)
+            {
+                foreach (var levelEntry in selectionsByLevel)
+                {
+                    int level = (int?)levelEntry["Key"] ?? 0;
+                    var featureGuids = levelEntry["Value"];
+
+                    if (!historyMap.ContainsKey(level))
+                    {
+                        historyMap[level] = new List<string>();
+                    }
+
+                    if (featureGuids != null)
+                    {
+                        foreach (var featGuid in featureGuids)
+                        {
+                            string guid = featGuid.ToString();
+                            string name = _blueprintLookup.GetName(guid);
+                            
+                            // Only add recognized features
+                            if (!string.IsNullOrEmpty(name) && 
+                                name != "None" && 
+                                !name.StartsWith("Blueprint_"))
+                            {
+                                // Check if this feature has parameters
+                                string displayName = name;
+                                if (featureParams.TryGetValue(guid, out var param))
+                                {
+                                    var weaponCategory = param["WeaponCategory"]?.ToString();
+                                    var spellSchool = param["SpellSchool"]?.ToString();
+                                    var statType = param["StatType"]?.ToString();
+                                    
+                                    if (!string.IsNullOrEmpty(weaponCategory))
+                                    {
+                                        displayName = $"{name} ({weaponCategory})";
+                                    }
+                                    else if (!string.IsNullOrEmpty(spellSchool))
+                                    {
+                                        displayName = $"{name} ({spellSchool})";
+                                    }
+                                    else if (!string.IsNullOrEmpty(statType))
+                                    {
+                                        displayName = $"{name} ({statType})";
+                                    }
+                                }
+                                
+                                historyMap[level].Add(displayName);
                             }
                         }
                     }
