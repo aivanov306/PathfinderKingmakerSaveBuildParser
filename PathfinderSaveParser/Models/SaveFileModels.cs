@@ -45,6 +45,27 @@ public class Kingdom
 
     [JsonProperty("CurrentTurn")]
     public int CurrentTurn { get; set; }
+
+    [JsonProperty("Leaders")]
+    public List<KingdomLeader>? Leaders { get; set; }
+}
+
+public class KingdomLeader
+{
+    [JsonProperty("Type")]
+    public string? Type { get; set; }
+
+    [JsonProperty("LeaderSelection")]
+    public LeaderSelection? LeaderSelection { get; set; }
+
+    [JsonProperty("PossibleLeaders")]
+    public List<string>? PossibleLeaders { get; set; }
+}
+
+public class LeaderSelection
+{
+    [JsonProperty("m_Blueprint")]
+    public string? Blueprint { get; set; }
 }
 
 public class KingdomStatsContainer

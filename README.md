@@ -28,6 +28,13 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 - **Kingdom Stats**: All 10 kingdom statistics with both value and rank:
   - Community, Loyalty, Military, Economy, Relations
   - Divine, Arcane, Stability, Culture, Espionage
+- **Kingdom Advisors**: Shows all 10 advisor positions with current assignments:
+  - Displays advisor names for filled positions
+  - Shows (Vacant) for unlocked positions without advisors
+  - Shows (Locked) for positions that haven't met stat requirements
+  - Special positions require Rank 3 and 60+ value in specific stats:
+    - Grand Diplomat (Community), Warden (Military), Magister (Arcane)
+    - Curator (Loyalty), Minister (Relations)
 
 ### Blueprint Database
 - Comprehensive database with 45,632+ game blueprints
@@ -85,6 +92,7 @@ Control what information is included in generated reports:
   "IncludeEquipment": true,          // All equipment sections
   "IncludeLevelHistory": true,       // Level-by-level feat progression
   "IncludeKingdomStats": true,       // Kingdom statistics report
+  "IncludeKingdomAdvisors": true,    // Kingdom advisor assignments
   "IncludeActiveWeaponSet": true,    // Currently equipped weapons
   "IncludeArmor": true,              // Equipped armor
   "IncludeAccessories": true,        // Rings, belts, cloaks, etc.
@@ -217,6 +225,22 @@ Arcane               17              0
 Stability            20              0         
 Culture              9               1         
 Espionage            0               0         
+------------------------------------------------------------
+
+Kingdom Advisors:
+------------------------------------------------------------
+Position                  Advisor
+------------------------------------------------------------
+Regent                    Valerie
+Counsilor                 Jhod Kavken
+General                   Regongar
+Treasurer                 Jubilost
+Grand Diplomat            (Locked)
+High Priest               Harrim
+Magister                  (Locked)
+Warden                    (Locked)
+Curator                   Storyteller
+Minister                  (Locked)
 ------------------------------------------------------------
 ```
 

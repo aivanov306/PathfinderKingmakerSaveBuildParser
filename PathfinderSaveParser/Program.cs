@@ -197,7 +197,7 @@ class Program
 
             // Initialize services
             var blueprintLookup = new BlueprintLookupService();
-            var kingdomParser = new KingdomStatsParser();
+            var kingdomParser = new KingdomStatsParser(blueprintLookup, reportOptions);
             
             // Create RefResolver for party.json
             Console.WriteLine("Indexing party.json references...");

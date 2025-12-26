@@ -15,6 +15,7 @@ public class ReportOptions
     
     // Kingdom Options
     public bool IncludeKingdomStats { get; set; } = true;
+    public bool IncludeKingdomAdvisors { get; set; } = true;
     
     // Equipment Detail Options
     public bool IncludeActiveWeaponSet { get; set; } = true;

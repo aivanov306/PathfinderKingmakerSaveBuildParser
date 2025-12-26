@@ -76,6 +76,7 @@ Control what information appears in generated reports:
   "IncludeEquipment": true,          // All equipment sections
   "IncludeLevelHistory": true,       // Level-by-level progression
   "IncludeKingdomStats": true,       // Kingdom statistics
+  "IncludeKingdomAdvisors": true,    // Kingdom advisor assignments
   "IncludeActiveWeaponSet": true,    // Current weapon set
   "IncludeArmor": true,              // Equipped armor
   "IncludeAccessories": true,        // Rings, belts, etc.
@@ -106,7 +107,7 @@ You can also manually place files in the SavedGame/ folder:
 ================================================================================
 
 Results are saved to the Output/ folder:
-- kingdom_stats.txt - Kingdom statistics and BP information
+- kingdom_stats.txt - Kingdom statistics, BP information, and advisor assignments
 - all_characters.txt - Complete character builds with equipment
 
 All output is also displayed in the console.
@@ -121,6 +122,7 @@ All output is also displayed in the console.
 ✓ Equipment with enchantments (weapons, armor, accessories)
 ✓ Spellcasting information (spell slots per day and known spells)
 ✓ Kingdom statistics (all 10 stats with ranks)
+✓ Kingdom advisors (shows assignments and availability)
 ✓ Support for main character + all companions
 ✓ Automatic blueprint name resolution (45,632+ entries)
 
