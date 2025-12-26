@@ -180,6 +180,26 @@ public class EnhancedCharacterParser
             }
         }
 
+        // Spellcasting
+        if (_options.IncludeSpellcasting)
+        {
+            try
+            {
+                var spellbookParser = new SpellbookParser(_blueprintLookup, _resolver, _options);
+                var spellbookReport = spellbookParser.ParseSpellbooks(descriptor);
+                if (!string.IsNullOrEmpty(spellbookReport))
+                {
+                    sb.AppendLine(spellbookReport);
+                    sb.AppendLine();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to parse spellbooks: {ex.Message}");
+                Console.WriteLine($"  Stack: {ex.StackTrace?.Split('\n')[0]}");
+            }
+        }
+
         // Level-by-Level History
         if (_options.IncludeLevelHistory)
         {

@@ -10,6 +10,7 @@ public class ReportOptions
     public bool IncludeRace { get; set; } = true;
     public bool IncludeClass { get; set; } = true;
     public bool IncludeEquipment { get; set; } = true;
+    public bool IncludeSpellcasting { get; set; } = true;
     public bool IncludeLevelHistory { get; set; } = true;
     
     // Kingdom Options

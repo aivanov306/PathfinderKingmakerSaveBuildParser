@@ -13,6 +13,11 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
   - All armor and accessory slots (body, head, neck, belt, cloak, rings, bracers, gloves, boots)
   - Item enchantments displayed inline
   - Distinguishes between empty slots, shields, and dual-wielding configurations
+- **Spellcasting**: Shows spellcasting information for all spellcaster classes
+  - Spell slots per day for each spell level
+  - Complete list of known/available spells organized by level
+  - Supports both spontaneous casters (Bard, Sorcerer) and prepared casters (Wizard, Cleric, etc.)
+  - Displays caster level for each spellbook
 - **Level-by-Level Build History**: Detailed progression showing features, feats, and abilities acquired at each level
 
 ### Kingdom Statistics
@@ -83,12 +88,13 @@ Control what information is included in generated reports:
   "IncludeAccessories": true,        // Rings, belts, cloaks, etc.
   "ShowEmptySlots": true,            // Display empty equipment slots
   "ShowEnchantments": true,          // Show item enchantments in parentheses
-  "ShowFeatParameters": true         // Show weapon types/schools in feat names
+  "ShowFeatParameters": true,        // Show weapon types/schools in feat names
+  "IncludeSpellcasting": true        // Show spell slots and available/known spells
 }
 ```
 
 **Examples:**
-- Minimal output (classes only): Set `IncludeStats`, `IncludeEquipment`, `IncludeLevelHistory` to `false`
+- Minimal output (classes only): Set `IncludeStats`, `IncludeEquipment`, `IncludeSpellcasting`, `IncludeLevelHistory` to `false`
 - Equipment focus: Set `IncludeStats`, `IncludeRace`, `IncludeClass`, `IncludeLevelHistory` to `false`
 - Clean view: Set `ShowEmptySlots` and `ShowEnchantments` to `false`
 
@@ -113,8 +119,7 @@ PathfinderKingmakerSaveBuildParser/
 │   ├── Services/
 │   │   ├── KingdomStatsParser.cs     # Kingdom statistics parser
 │   │   ├── CharacterParser.cs        # Character build parser with $ref resolution
-│   │   ├── EquipmentParser.cs        # Equipment and item parser
-│   │   ├── SaveFileExtractor.cs      # .zks save file extraction service
+│   │   ├── EquipmentParser.cs        # Equipment and item parser   │   ├── SpellbookParser.cs        # Spellcasting information parser│   │   ├── SaveFileExtractor.cs      # .zks save file extraction service
 │   │   ├── RefResolver.cs            # JSON $ref pointer resolver
 │   │   ├── BlueprintLookupService.cs # Blueprint GUID to name resolver
 │   │   └── SaveFileInspector.cs      # Save file metadata inspector
@@ -334,8 +339,8 @@ The application is designed to be maintainable and extensible:
 
 ### Dependencies
 - **Newtonsoft.Json** (v13.0.4): JSON serialization/deserialization
-- **Microsoft.Extensions.Configuration** (v8.0.0): Configuration file support
-- **Microsoft.Extensions.Configuration.Json** (v8.0.0): JSON configuration provider
+- **Microsoft.Extensions.Configuration** (v10.0.1): Configuration file support
+- **Microsoft.Extensions.Configuration.Json** (v10.0.1): JSON configuration provider
 - **System.IO.Compression**: ZIP archive extraction for .zks files
 - **.NET 8.0**: Runtime framework
 
@@ -345,6 +350,7 @@ The application is designed to be maintainable and extensible:
   - `RefResolver`: Handles JSON `$id` and `$ref` pointer resolution
   - `CharacterParser`: Parses character builds using dynamic JSON traversal
   - `EquipmentParser`: Extracts equipped items, weapons, and armor with enchantments
+  - `SpellbookParser`: Parses spellcasting information, spell slots, and known spells
   - `KingdomStatsParser`: Extracts kingdom statistics
   - `SaveFileExtractor`: Automatically extracts `.zks` archives and locates save files
   - `BlueprintLookupService`: Resolves GUIDs to human-readable names

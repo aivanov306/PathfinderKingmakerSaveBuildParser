@@ -1,5 +1,5 @@
 ================================================================================
-  Pathfinder: Kingmaker Save File Parser v1.2.0
+  Pathfinder: Kingmaker Save File Parser v1.4.0
 ================================================================================
 
 A tool to extract and analyze character builds, equipment, and kingdom 
@@ -81,11 +81,12 @@ Control what information appears in generated reports:
   "IncludeAccessories": true,        // Rings, belts, etc.
   "ShowEmptySlots": true,            // Display empty equipment slots
   "ShowEnchantments": true,          // Show item enchantments
-  "ShowFeatParameters": true         // Show weapon types in feats
+  "ShowFeatParameters": true,        // Show weapon types in feats
+  "IncludeSpellcasting": true        // Spell slots and available spells
 }
 
 EXAMPLE: Minimal output (just class info):
-  Set IncludeStats, IncludeEquipment, IncludeLevelHistory to false
+  Set IncludeStats, IncludeEquipment, IncludeSpellcasting, IncludeLevelHistory to false
 
 EXAMPLE: Clean equipment view:
   Set ShowEmptySlots and ShowEnchantments to false
@@ -118,6 +119,7 @@ All output is also displayed in the console.
 ✓ Character builds (race, classes, abilities)
 ✓ Level-by-level feat and feature progression
 ✓ Equipment with enchantments (weapons, armor, accessories)
+✓ Spellcasting information (spell slots per day and known spells)
 ✓ Kingdom statistics (all 10 stats with ranks)
 ✓ Support for main character + all companions
 ✓ Automatic blueprint name resolution (45,632+ entries)
