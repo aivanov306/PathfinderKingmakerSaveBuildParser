@@ -202,11 +202,13 @@ class Program
             // Initialize services
             var blueprintLookup = new BlueprintLookupService();
             var kingdomParser = new KingdomStatsParser(blueprintLookup, reportOptions);
+            var inventoryParser = new InventoryParser(blueprintLookup);
             
             // Create RefResolver for party.json
             Console.WriteLine("Indexing party.json references...");
             var partyResolver = new RefResolver(partyJson);
             var enhancedParser = new EnhancedCharacterParser(blueprintLookup, partyResolver, reportOptions);
+            var jsonBuilder = new JsonOutputBuilder(blueprintLookup, partyResolver);
             Console.WriteLine("Reference indexing complete.");
             Console.WriteLine();
             Console.WriteLine(new string('=', 80));
@@ -233,6 +235,19 @@ class Program
             else
             {
                 Console.WriteLine("No kingdom data found in save file.");
+            }
+
+            Console.WriteLine();
+
+            // Parse Inventory (Personal Chest + Shared Party Inventory)
+            if (reportOptions.IncludeInventory)
+            {
+                var inventoryReport = inventoryParser.ParseBothInventories(playerSave.SharedStash, partyJson);
+                var inventoryOutputPath = Path.Combine(outputDir, "inventory.txt");
+                await File.WriteAllTextAsync(inventoryOutputPath, inventoryReport);
+                Console.WriteLine(inventoryReport);
+                Console.WriteLine();
+                Console.WriteLine(new string('=', 80));
             }
 
             Console.WriteLine();
@@ -297,6 +312,71 @@ class Program
             {
                 Console.WriteLine("No characters found in party data.");
             }
+
+            // Generate JSON output files
+            Console.WriteLine();
+            Console.WriteLine("Generating JSON output files...");
+            
+            // Build all characters as JSON
+            var allCharactersJson = jsonBuilder.BuildCharactersJson(partyJson);
+            
+            // Apply the same filtering and ordering as text reports
+            if (excludeCharacters.Any())
+            {
+                allCharactersJson = allCharactersJson
+                    .Where(c => !excludeCharacters.Any(pattern => 
+                        (c.Name ?? "").Contains(pattern, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+            
+            if (characterDisplayOrder.Any())
+            {
+                allCharactersJson = allCharactersJson
+                    .OrderBy(c => 
+                    {
+                        var orderIndex = characterDisplayOrder.FindIndex(pattern => 
+                            (c.Name ?? "").Contains(pattern, StringComparison.OrdinalIgnoreCase));
+                        return orderIndex == -1 ? int.MaxValue : orderIndex;
+                    })
+                    .ThenBy(c => c.Name)
+                    .ToList();
+            }
+            
+            var currentState = new CurrentStateJson
+            {
+                Kingdom = playerSave.Kingdom != null ? jsonBuilder.BuildKingdomJson(playerSave.Kingdom, playerSave.Money) : null,
+                Inventory = jsonBuilder.BuildInventoryJson(playerSave.SharedStash, partyJson),
+                Characters = allCharactersJson
+            };
+
+            // Save combined JSON
+            var currentStateJson = JsonConvert.SerializeObject(currentState, Formatting.Indented);
+            var currentStatePath = Path.Combine(outputDir, "CurrentState.json");
+            await File.WriteAllTextAsync(currentStatePath, currentStateJson);
+
+            // Save separate JSON files
+            if (currentState.Kingdom != null)
+            {
+                var kingdomJson = JsonConvert.SerializeObject(currentState.Kingdom, Formatting.Indented);
+                var kingdomJsonPath = Path.Combine(outputDir, "kingdom_stats.json");
+                await File.WriteAllTextAsync(kingdomJsonPath, kingdomJson);
+            }
+
+            if (currentState.Inventory != null)
+            {
+                var inventoryJson = JsonConvert.SerializeObject(currentState.Inventory, Formatting.Indented);
+                var inventoryJsonPath = Path.Combine(outputDir, "inventory.json");
+                await File.WriteAllTextAsync(inventoryJsonPath, inventoryJson);
+            }
+
+            if (currentState.Characters != null && currentState.Characters.Any())
+            {
+                var charactersJson = JsonConvert.SerializeObject(currentState.Characters, Formatting.Indented);
+                var charactersJsonPath = Path.Combine(outputDir, "all_characters.json");
+                await File.WriteAllTextAsync(charactersJsonPath, charactersJson);
+            }
+
+            Console.WriteLine("JSON files saved successfully.");
 
             Console.WriteLine();
             Console.WriteLine("=== Parsing Complete! ===");

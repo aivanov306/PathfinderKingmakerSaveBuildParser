@@ -1,0 +1,165 @@
+namespace PathfinderSaveParser.Models;
+
+/// <summary>
+/// Combined JSON output containing all game state data
+/// </summary>
+public class CurrentStateJson
+{
+    public KingdomStatsJson? Kingdom { get; set; }
+    public InventoryJson? Inventory { get; set; }
+    public List<CharacterJson>? Characters { get; set; }
+}
+
+/// <summary>
+/// Kingdom statistics in JSON format
+/// </summary>
+public class KingdomStatsJson
+{
+    public string? Name { get; set; }
+    public string? Alignment { get; set; }
+    public int Gold { get; set; }
+    public int BuildPoints { get; set; }
+    public int BuildPointsPerTurn { get; set; }
+    public string? UnrestLevel { get; set; }
+    public List<KingdomStatJson>? Stats { get; set; }
+    public List<AdvisorJson>? Advisors { get; set; }
+}
+
+/// <summary>
+/// Individual kingdom stat
+/// </summary>
+public class KingdomStatJson
+{
+    public string? Type { get; set; }
+    public int Value { get; set; }
+    public int Rank { get; set; }
+}
+
+/// <summary>
+/// Kingdom advisor assignment
+/// </summary>
+public class AdvisorJson
+{
+    public string? Position { get; set; }
+    public string? Advisor { get; set; }
+    public string? Status { get; set; } // "Assigned", "Vacant", "Locked"
+}
+
+/// <summary>
+/// Inventory data in JSON format
+/// </summary>
+public class InventoryJson
+{
+    public InventoryCollectionJson? PersonalChest { get; set; }
+    public InventoryCollectionJson? SharedInventory { get; set; }
+}
+
+/// <summary>
+/// Collection of categorized inventory items
+/// </summary>
+public class InventoryCollectionJson
+{
+    public List<InventoryItemJson>? Weapons { get; set; }
+    public List<InventoryItemJson>? Armor { get; set; }
+    public List<InventoryItemJson>? Accessories { get; set; }
+    public List<InventoryItemJson>? Usables { get; set; }
+    public List<InventoryItemJson>? Other { get; set; }
+    public int TotalItems { get; set; }
+    public int UniqueItems { get; set; }
+}
+
+/// <summary>
+/// Single inventory item
+/// </summary>
+public class InventoryItemJson
+{
+    public string? Name { get; set; }
+    public string? Type { get; set; }
+    public int Count { get; set; }
+}
+
+/// <summary>
+/// Character data in JSON format
+/// </summary>
+public class CharacterJson
+{
+    public string? Name { get; set; }
+    public string? Race { get; set; }
+    public List<ClassInfoJson>? Classes { get; set; }
+    public AttributesJson? Attributes { get; set; }
+    public EquipmentJson? Equipment { get; set; }
+    public List<SpellbookJson>? Spellbooks { get; set; }
+    public List<LevelProgressionJson>? LevelProgression { get; set; }
+}
+
+/// <summary>
+/// Class information
+/// </summary>
+public class ClassInfoJson
+{
+    public string? ClassName { get; set; }
+    public string? Archetype { get; set; }
+    public int Level { get; set; }
+}
+
+/// <summary>
+/// Character attributes
+/// </summary>
+public class AttributesJson
+{
+    public int Strength { get; set; }
+    public int Dexterity { get; set; }
+    public int Constitution { get; set; }
+    public int Intelligence { get; set; }
+    public int Wisdom { get; set; }
+    public int Charisma { get; set; }
+}
+
+/// <summary>
+/// Equipped items
+/// </summary>
+public class EquipmentJson
+{
+    public EquipmentSlotJson? MainHand { get; set; }
+    public EquipmentSlotJson? OffHand { get; set; }
+    public EquipmentSlotJson? Body { get; set; }
+    public EquipmentSlotJson? Head { get; set; }
+    public EquipmentSlotJson? Neck { get; set; }
+    public EquipmentSlotJson? Belt { get; set; }
+    public EquipmentSlotJson? Cloak { get; set; }
+    public EquipmentSlotJson? Ring1 { get; set; }
+    public EquipmentSlotJson? Ring2 { get; set; }
+    public EquipmentSlotJson? Bracers { get; set; }
+    public EquipmentSlotJson? Gloves { get; set; }
+    public EquipmentSlotJson? Boots { get; set; }
+}
+
+/// <summary>
+/// Equipment slot item
+/// </summary>
+public class EquipmentSlotJson
+{
+    public string? Name { get; set; }
+    public string? Type { get; set; }
+    public List<string>? Enchantments { get; set; }
+}
+
+/// <summary>
+/// Spellbook information
+/// </summary>
+public class SpellbookJson
+{
+    public string? ClassName { get; set; }
+    public int CasterLevel { get; set; }
+    public Dictionary<int, int>? SpellSlotsPerDay { get; set; }
+    public Dictionary<int, List<string>>? KnownSpells { get; set; }
+}
+
+/// <summary>
+/// Level progression entry
+/// </summary>
+public class LevelProgressionJson
+{
+    public int Level { get; set; }
+    public List<string>? Features { get; set; }
+}

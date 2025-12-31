@@ -25,6 +25,19 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 - **Kingdom Name & Alignment**: Basic kingdom information
 - **Gold**: Current party gold amount
 - **Build Points**: Current BP and per-turn generation
+
+### Inventory
+- **Personal Chest (SharedStash)**: Items stored in player's personal stash
+- **Shared Party Inventory**: Items in the party's shared inventory (m_InventorySlotIndex >= 0)
+- Both inventories saved to separate file with clear sections
+  - Items categorized by type: Weapons, Armor & Shields, Accessories, Usables, Other
+  - Equipment types shown in brackets for weapons and armor
+  - Accessories include belts, amulets, rings, bracers, headbands, cloaks, helmets, gloves, boots
+  - Usables include potions, scrolls, wands, flasks, alchemist's fire
+  - Item counts displayed for stackable items (x2, x5, etc.)
+  - Total item count and unique item count summary per inventory
+  - Sorted alphabetically within each category
+  - Excludes equipped items (only shows unequipped inventory)
 - **Unrest Level**: Current unrest status
 - **Kingdom Stats**: All 10 kingdom statistics with both value and rank:
   - Community, Loyalty, Military, Economy, Relations
@@ -36,6 +49,16 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
   - Special positions require Rank 3 and 60+ value in specific stats:
     - Grand Diplomat (Community), Warden (Military), Magister (Arcane)
     - Curator (Loyalty), Minister (Relations)
+
+### JSON Export
+- **CurrentState.json**: Combined file with complete game state
+  - Kingdom: Name, alignment, gold, build points, unrest, stats (with ranks), advisor assignments
+  - Inventory: Personal chest and shared inventory, categorized by type (weapons, armor, accessories, usables, other)
+  - Characters: Full character data including name, race, classes, attributes, equipment, spellbooks, level progression
+- **Separate JSON files**: Individual files for kingdom, inventory, and characters
+- **Structured format**: Properly formatted JSON with indentation for readability
+- **Type information**: Equipment includes type data (weapon types, armor types)
+- **Categorization**: Items grouped by category with totals and counts
 
 ### Blueprint Database
 - Comprehensive database with 45,632+ game blueprints
@@ -94,6 +117,7 @@ Control what information is included in generated reports:
   "IncludeLevelHistory": true,       // Level-by-level feat progression
   "IncludeKingdomStats": true,       // Kingdom statistics report
   "IncludeKingdomAdvisors": true,    // Kingdom advisor assignments
+  "IncludeInventory": true,          // Personal chest inventory
   "IncludeActiveWeaponSet": true,    // Currently equipped weapons
   "IncludeArmor": true,              // Equipped armor
   "IncludeAccessories": true,        // Rings, belts, cloaks, etc.
@@ -165,8 +189,13 @@ PathfinderKingmakerSaveBuildParser/
 │   ├── SavedGame/                     # Extracted save files location (auto-created)
 │   │   └── README.txt                 # Instructions for save file placement
 │   └── Output/                        # Generated reports (auto-created on build)
-│       ├── kingdom_stats.txt
-│       └── all_characters.txt
+│       ├── kingdom_stats.txt          # Kingdom statistics (text)
+│       ├── inventory.txt              # Inventory lists (text)
+│       ├── all_characters.txt         # Character builds (text)
+│       ├── CurrentState.json          # Combined game state (JSON)
+│       ├── kingdom_stats.json         # Kingdom data (JSON)
+│       ├── inventory.json             # Inventory data (JSON)
+│       └── all_characters.json        # Character data (JSON)
 ├── BlueprintBuilder/
 │   └── Program.cs                     # Utility to rebuild blueprint database
 └── Blueprints2.1.4/                   # Blueprint dump folder (not in repository)
@@ -224,10 +253,23 @@ dotnet PathfinderSaveParser.dll
 
 ### Output
 
-The application generates the following reports in the `Output/` folder and displays them in the console:
+The application generates the following reports in the `Output/` folder and displays text output in the console:
 
+#### Text Files (Human-readable reports)
 1. **kingdom_stats.txt** - Kingdom statistics with values and ranks
-2. **all_characters.txt** - Complete build analysis for all characters (main + companions)
+2. **inventory.txt** - Personal chest and shared party inventory
+3. **all_characters.txt** - Complete build analysis for all characters (main + companions)
+
+#### JSON Files (Structured data for programmatic access)
+1. **CurrentState.json** - Combined file containing all game state data:
+   - Kingdom statistics and advisors
+   - Personal chest and shared inventory
+   - All character builds with attributes, classes, equipment, spells, and progression
+2. **kingdom_stats.json** - Kingdom data in JSON format
+3. **inventory.json** - Both inventories in JSON format with categorization
+4. **all_characters.json** - All character builds in JSON format
+
+The JSON files provide structured data suitable for external tools, data analysis, or integration with other applications.
 
 ## Example Output
 

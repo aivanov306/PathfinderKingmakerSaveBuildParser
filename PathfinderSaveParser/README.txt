@@ -77,6 +77,7 @@ Control what information appears in generated reports:
   "IncludeLevelHistory": true,       // Level-by-level progression
   "IncludeKingdomStats": true,       // Kingdom statistics
   "IncludeKingdomAdvisors": true,    // Kingdom advisor assignments
+  "IncludeInventory": true,          // Personal chest inventory
   "IncludeActiveWeaponSet": true,    // Current weapon set
   "IncludeArmor": true,              // Equipped armor
   "IncludeAccessories": true,        // Rings, belts, etc.
@@ -124,10 +125,19 @@ You can also manually place files in the SavedGame/ folder:
 ================================================================================
 
 Results are saved to the Output/ folder:
+
+TEXT FILES (Human-readable reports):
 - kingdom_stats.txt - Kingdom statistics, gold, BP, and advisor assignments
+- inventory.txt - Personal chest and shared party inventory (excludes equipped items)
 - all_characters.txt - Complete character builds with equipment
 
-All output is also displayed in the console.
+JSON FILES (Structured data for programmatic access):
+- CurrentState.json - Combined file with all data (kingdom, inventory, characters)
+- kingdom_stats.json - Kingdom statistics in JSON format
+- inventory.json - Both inventories in JSON format
+- all_characters.json - All character builds in JSON format
+
+All text output is also displayed in the console.
 
 
 ================================================================================
@@ -141,10 +151,12 @@ All output is also displayed in the console.
 ✓ Kingdom statistics (all 10 stats with ranks)
 ✓ Kingdom advisors (shows assignments and availability)
 ✓ Gold tracking (displays current party gold)
+✓ Inventory listing (personal chest + shared party inventory)
 ✓ Character ordering (customize output order)
 ✓ Character exclusion (hide specific characters)
 ✓ Support for main character + all companions
 ✓ Automatic blueprint name resolution (45,632+ entries)
+✓ JSON export (structured data output for all game state)
 
 
 ================================================================================

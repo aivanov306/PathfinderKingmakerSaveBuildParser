@@ -18,6 +18,24 @@ public class PlayerSaveFile
 
     [JsonProperty("Money")]
     public int Money { get; set; }
+
+    [JsonProperty("SharedStash")]
+    public ItemCollection? SharedStash { get; set; }
+}
+
+public class ItemCollection
+{
+    [JsonProperty("m_Items")]
+    public List<InventoryItem>? Items { get; set; }
+}
+
+public class InventoryItem
+{
+    [JsonProperty("m_Blueprint")]
+    public string? Blueprint { get; set; }
+
+    [JsonProperty("m_Count")]
+    public int Count { get; set; }
 }
 
 public class CharacterReference
