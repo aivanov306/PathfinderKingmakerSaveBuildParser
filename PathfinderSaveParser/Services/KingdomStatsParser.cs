@@ -14,7 +14,7 @@ public class KingdomStatsParser
         _options = options;
     }
 
-    public string ParseKingdomStats(Kingdom kingdom)
+    public string ParseKingdomStats(Kingdom kingdom, int gold = 0)
     {
         var sb = new StringBuilder();
         
@@ -24,6 +24,7 @@ public class KingdomStatsParser
         sb.AppendLine($"Alignment: {kingdom.Alignment}");
         sb.AppendLine($"Unrest Level: {kingdom.Unrest}");
         sb.AppendLine($"Build Points: {kingdom.BuildPoints} (Per Turn: {kingdom.CurrentTurn})");
+        sb.AppendLine($"Gold: {gold:N0}");
         sb.AppendLine();
         sb.AppendLine("Kingdom Stats:");
         sb.AppendLine("".PadRight(60, '-'));

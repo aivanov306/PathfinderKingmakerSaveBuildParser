@@ -23,6 +23,7 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 
 ### Kingdom Statistics
 - **Kingdom Name & Alignment**: Basic kingdom information
+- **Gold**: Current party gold amount
 - **Build Points**: Current BP and per-turn generation
 - **Unrest Level**: Current unrest status
 - **Kingdom Stats**: All 10 kingdom statistics with both value and rank:
@@ -107,6 +108,34 @@ Control what information is included in generated reports:
 - Minimal output (classes only): Set `IncludeStats`, `IncludeEquipment`, `IncludeSpellcasting`, `IncludeLevelHistory` to `false`
 - Equipment focus: Set `IncludeStats`, `IncludeRace`, `IncludeClass`, `IncludeLevelHistory` to `false`
 - Clean view: Set `ShowEmptySlots` and `ShowEnchantments` to `false`
+
+#### Character Display Options
+
+Control which characters appear and in what order:
+
+```json
+"CharacterDisplayOrder": [
+  "Melaku",
+  "Regongar",
+  "Harrim",
+  "Tristian",
+  "Jubilost",
+  "Amiri",
+  "Smilodon"
+],
+"ExcludeCharacters": [
+  "Tartuccio"
+]
+```
+
+- **CharacterDisplayOrder**: Array of character name patterns (case-insensitive, partial match)
+  - Characters matching these patterns appear first in the specified order
+  - Remaining characters appear after, sorted alphabetically
+  - Example: "Smilodon" matches "Animal Companion Unit Smilodon"
+- **ExcludeCharacters**: Array of character name patterns to exclude from reports
+  - Characters matching these patterns will not appear in the output
+  - Uses case-insensitive partial matching
+  - Example: "Tartuccio" excludes any character with that name
 
 **Manual Options:**
 - Copy extracted `player.json` and `party.json` to `SavedGame/` folder, or
@@ -208,6 +237,7 @@ The application generates the following reports in the `Output/` folder and disp
 
 Kingdom Name: Barony of the Stolen Lands
 Alignment: LawfulGood
+Gold: 55 468
 Unrest Level: Worried
 Build Points: 39 (Per Turn: 8)
 

@@ -28,3 +28,12 @@ public class ReportOptions
     // Feature/Feat Options
     public bool ShowFeatParameters { get; set; } = true;
 }
+
+/// <summary>
+/// Contains character name and report for ordering
+/// </summary>
+public class CharacterReport
+{
+    public string CharacterName { get; set; } = string.Empty;
+    public string Report { get; set; } = string.Empty;
+}

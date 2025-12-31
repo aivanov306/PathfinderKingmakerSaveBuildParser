@@ -15,6 +15,9 @@ public class PlayerSaveFile
 
     [JsonProperty("m_MainCharacter")]
     public CharacterReference? MainCharacter { get; set; }
+
+    [JsonProperty("Money")]
+    public int Money { get; set; }
 }
 
 public class CharacterReference

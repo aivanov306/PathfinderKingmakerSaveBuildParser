@@ -20,9 +20,9 @@ public class EnhancedCharacterParser
         _options = options;
     }
 
-    public List<string> ParseAllCharacters(JToken partyJson)
+    public List<CharacterReport> ParseAllCharacters(JToken partyJson)
     {
-        var reports = new List<string>();
+        var reports = new List<CharacterReport>();
         var units = partyJson["m_EntityData"];
         
         if (units == null) return reports;
@@ -32,7 +32,7 @@ public class EnhancedCharacterParser
             try
             {
                 var report = ParseSingleCharacter(rawUnit);
-                if (!string.IsNullOrEmpty(report))
+                if (report != null)
                 {
                     reports.Add(report);
                 }
@@ -47,7 +47,7 @@ public class EnhancedCharacterParser
         return reports;
     }
 
-    private string? ParseSingleCharacter(JToken rawUnit)
+    private CharacterReport? ParseSingleCharacter(JToken rawUnit)
     {
         // Resolve the unit reference
         var unit = _resolver.Resolve(rawUnit);
@@ -160,6 +160,18 @@ public class EnhancedCharacterParser
         sb.AppendLine();
         sb.AppendLine();
 
+        // Level-by-Level History
+        if (_options.IncludeLevelHistory)
+        {
+            sb.AppendLine("LEVEL-BY-LEVEL BUILD HISTORY");
+            sb.AppendLine(new string('=', 80));
+            
+            ParseHistoryWithParams(progression["m_Selections"], progression, sb);
+
+            sb.AppendLine();
+            sb.AppendLine();
+        }
+
         // Equipment
         if (_options.IncludeEquipment)
         {
@@ -200,16 +212,11 @@ public class EnhancedCharacterParser
             }
         }
 
-        // Level-by-Level History
-        if (_options.IncludeLevelHistory)
+        return new CharacterReport
         {
-            sb.AppendLine("LEVEL-BY-LEVEL BUILD HISTORY");
-            sb.AppendLine(new string('=', 80));
-            
-            ParseHistoryWithParams(progression["m_Selections"], progression, sb);
-        }
-
-        return sb.ToString();
+            CharacterName = charName,
+            Report = sb.ToString()
+        };
     }
 
     private string GetStatValue(JToken stats, string statName)

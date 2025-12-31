@@ -27,6 +27,10 @@ class Program
             var reportOptions = new ReportOptions();
             config.GetSection("ReportOptions").Bind(reportOptions);
             
+            // Load character display order from config
+            var characterDisplayOrder = config.GetSection("CharacterDisplayOrder").Get<List<string>>() ?? new List<string>();
+            var excludeCharacters = config.GetSection("ExcludeCharacters").Get<List<string>>() ?? new List<string>();
+            
             Console.WriteLine($"Report Options Loaded:");
             Console.WriteLine($"  Include Stats: {reportOptions.IncludeStats}");
             Console.WriteLine($"  Include Equipment: {reportOptions.IncludeEquipment}");
@@ -215,7 +219,7 @@ class Program
             // Parse Kingdom Stats
             if (reportOptions.IncludeKingdomStats && playerSave.Kingdom != null)
             {
-                var kingdomReport = kingdomParser.ParseKingdomStats(playerSave.Kingdom);
+                var kingdomReport = kingdomParser.ParseKingdomStats(playerSave.Kingdom, playerSave.Money);
                 var kingdomOutputPath = Path.Combine(outputDir, "kingdom_stats.txt");
                 await File.WriteAllTextAsync(kingdomOutputPath, kingdomReport);
                 Console.WriteLine(kingdomReport);
@@ -236,6 +240,29 @@ class Program
             // Parse All Characters (main + companions)
             var characterReports = enhancedParser.ParseAllCharacters(partyJson);
             
+            // Filter out excluded characters
+            if (excludeCharacters.Any())
+            {
+                characterReports = characterReports
+                    .Where(cr => !excludeCharacters.Any(pattern => 
+                        cr.CharacterName.Contains(pattern, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+            
+            // Sort characters based on CharacterDisplayOrder
+            if (characterDisplayOrder.Any())
+            {
+                characterReports = characterReports
+                    .OrderBy(cr => 
+                    {
+                        var orderIndex = characterDisplayOrder.FindIndex(pattern => 
+                            cr.CharacterName.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+                        return orderIndex == -1 ? int.MaxValue : orderIndex;
+                    })
+                    .ThenBy(cr => cr.CharacterName)
+                    .ToList();
+            }
+            
             if (characterReports.Any())
             {
                 // Save all characters to a single file
@@ -245,7 +272,7 @@ class Program
                 
                 foreach (var report in characterReports)
                 {
-                    allCharactersReport.AppendLine(report);
+                    allCharactersReport.AppendLine(report.Report);
                     allCharactersReport.AppendLine();
                     allCharactersReport.AppendLine(new string('=', 80));
                     allCharactersReport.AppendLine();
@@ -260,7 +287,7 @@ class Program
                 
                 foreach (var report in characterReports)
                 {
-                    Console.WriteLine(report);
+                    Console.WriteLine(report.Report);
                     Console.WriteLine();
                     Console.WriteLine(new string('=', 80));
                     Console.WriteLine();

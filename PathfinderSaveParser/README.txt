@@ -1,5 +1,5 @@
 ================================================================================
-  Pathfinder: Kingmaker Save File Parser v1.4.0
+  Pathfinder: Kingmaker Save File Parser
 ================================================================================
 
 A tool to extract and analyze character builds, equipment, and kingdom 
@@ -93,6 +93,23 @@ EXAMPLE: Clean equipment view:
   Set ShowEmptySlots and ShowEnchantments to false
 
 
+CHARACTER OPTIONS
+-----------------
+Control character display order and visibility:
+
+"CharacterDisplayOrder": ["Melaku", "Regongar", "Harrim", ...]
+"ExcludeCharacters": ["Tartuccio"]
+
+- CharacterDisplayOrder: Characters matching these patterns appear first
+  * Uses case-insensitive partial matching
+  * Remaining characters appear after, sorted alphabetically
+  * Example: "Smilodon" matches "Animal Companion Unit Smilodon"
+
+- ExcludeCharacters: Characters matching these patterns are hidden
+  * Useful for hiding temporary companions or unwanted characters
+  * Example: "Tartuccio" excludes characters with that name
+
+
 ================================================================================
   MANUAL OPTIONS
 ================================================================================
@@ -107,7 +124,7 @@ You can also manually place files in the SavedGame/ folder:
 ================================================================================
 
 Results are saved to the Output/ folder:
-- kingdom_stats.txt - Kingdom statistics, BP information, and advisor assignments
+- kingdom_stats.txt - Kingdom statistics, gold, BP, and advisor assignments
 - all_characters.txt - Complete character builds with equipment
 
 All output is also displayed in the console.
@@ -123,6 +140,9 @@ All output is also displayed in the console.
 ✓ Spellcasting information (spell slots per day and known spells)
 ✓ Kingdom statistics (all 10 stats with ranks)
 ✓ Kingdom advisors (shows assignments and availability)
+✓ Gold tracking (displays current party gold)
+✓ Character ordering (customize output order)
+✓ Character exclusion (hide specific characters)
 ✓ Support for main character + all companions
 ✓ Automatic blueprint name resolution (45,632+ entries)
 
