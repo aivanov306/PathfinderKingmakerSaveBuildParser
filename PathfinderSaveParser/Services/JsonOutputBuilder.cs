@@ -556,94 +556,103 @@ public class JsonOutputBuilder
         if (_resolver == null) return null;
 
         var bodyRef = descriptor["Body"];
+        if (bodyRef == null) return null;
+        
         var body = _resolver.Resolve(bodyRef);
-        if (body == null) return null;
+        if (body == null || body.Type == JTokenType.Null)
+            return null; // Can't parse equipment without body reference
 
         var equipment = new EquipmentJson();
 
-        // Parse primary hand
-        var primaryHandRef = body["m_PrimaryHand"];
-        var primaryHand = _resolver.Resolve(primaryHandRef);
-        equipment.MainHand = ParseEquipmentSlotJson(primaryHand);
+        // Parse active weapon set
+        var sets = body["m_HandsEquipmentSets"];
+        var activeIndex = body["m_CurrentHandsEquipmentSetIndex"]?.Value<int>() ?? 0;
+        
+        if (sets != null && sets.HasValues && sets.Count() > activeIndex)
+        {
+            var activeSet = sets.ElementAtOrDefault(activeIndex);
+            if (activeSet is JObject)
+            {
+                var primaryRef = activeSet["PrimaryHand"];
+                equipment.MainHand = ParseEquipmentSlotJson(primaryRef);
+                
+                var secondaryRef = activeSet["SecondaryHand"];
+                equipment.OffHand = ParseEquipmentSlotJson(secondaryRef);
+            }
+        }
 
-        // Parse secondary hand
-        var secondaryHandRef = body["m_SecondaryHand"];
-        var secondaryHand = _resolver.Resolve(secondaryHandRef);
-        equipment.OffHand = ParseEquipmentSlotJson(secondaryHand);
-
-        // Parse armor slots
-        var armor = body["m_Armor"];
-        var armorRef = _resolver.Resolve(armor);
-        equipment.Body = ParseEquipmentSlotJson(armorRef);
-
-        var head = body["m_Head"];
-        var headRef = _resolver.Resolve(head);
-        equipment.Head = ParseEquipmentSlotJson(headRef);
-
-        var neck = body["m_Neck"];
-        var neckRef = _resolver.Resolve(neck);
-        equipment.Neck = ParseEquipmentSlotJson(neckRef);
-
-        var belt = body["m_Belt"];
-        var beltRef = _resolver.Resolve(belt);
-        equipment.Belt = ParseEquipmentSlotJson(beltRef);
-
-        var shoulders = body["m_Shoulders"];
-        var shouldersRef = _resolver.Resolve(shoulders);
-        equipment.Cloak = ParseEquipmentSlotJson(shouldersRef);
-
-        var ring1 = body["m_Ring1"];
-        var ring1Ref = _resolver.Resolve(ring1);
-        equipment.Ring1 = ParseEquipmentSlotJson(ring1Ref);
-
-        var ring2 = body["m_Ring2"];
-        var ring2Ref = _resolver.Resolve(ring2);
-        equipment.Ring2 = ParseEquipmentSlotJson(ring2Ref);
-
-        var wrist = body["m_Wrist"];
-        var wristRef = _resolver.Resolve(wrist);
-        equipment.Bracers = ParseEquipmentSlotJson(wristRef);
-
-        var gloves = body["m_Gloves"];
-        var glovesRef = _resolver.Resolve(gloves);
-        equipment.Gloves = ParseEquipmentSlotJson(glovesRef);
-
-        var feet = body["m_Feet"];
-        var feetRef = _resolver.Resolve(feet);
-        equipment.Boots = ParseEquipmentSlotJson(feetRef);
+        // Parse armor slots (note: keys are without "m_" prefix)
+        equipment.Body = ParseEquipmentSlotJson(body["Armor"]);
+        equipment.Head = ParseEquipmentSlotJson(body["Head"]);
+        equipment.Neck = ParseEquipmentSlotJson(body["Neck"]);
+        equipment.Belt = ParseEquipmentSlotJson(body["Belt"]);
+        equipment.Cloak = ParseEquipmentSlotJson(body["Shoulders"]);
+        equipment.Ring1 = ParseEquipmentSlotJson(body["Ring1"]);
+        equipment.Ring2 = ParseEquipmentSlotJson(body["Ring2"]);
+        equipment.Bracers = ParseEquipmentSlotJson(body["Wrist"]);
+        equipment.Gloves = ParseEquipmentSlotJson(body["Gloves"]);
+        equipment.Boots = ParseEquipmentSlotJson(body["Feet"]);
 
         return equipment;
     }
 
-    private EquipmentSlotJson? ParseEquipmentSlotJson(JToken? itemRef)
+    private EquipmentSlotJson? ParseEquipmentSlotJson(JToken? slotRef)
     {
-        if (itemRef == null || _resolver == null) return null;
+        if (slotRef == null || slotRef.Type == JTokenType.Null || _resolver == null)
+            return null;
 
-        var item = _resolver.Resolve(itemRef);
-        if (item == null) return null;
+        // Resolve the slot reference
+        var slot = _resolver.Resolve(slotRef);
+        if (slot == null || slot.Type == JTokenType.Null)
+            return null;
 
-        var blueprintId = item["Blueprint"]?.ToString();
+        // Check if slot has m_Item property (armor/accessory slots)
+        JToken? item = null;
+        if (slot is JObject slotObj && slotObj.Property("m_Item") != null)
+        {
+            var itemRef = slotObj["m_Item"];
+            if (itemRef == null || itemRef.Type == JTokenType.Null)
+                return null; // Slot exists but is empty
+            
+            item = _resolver.Resolve(itemRef);
+        }
+        else
+        {
+            // For weapon slots, the slot reference directly points to the item
+            item = slot;
+        }
+
+        if (item == null || item.Type == JTokenType.Null)
+            return null;
+
+        var blueprintId = item["m_Blueprint"]?.ToString(); // NOTE: it's "m_Blueprint" not "Blueprint"!
         if (string.IsNullOrEmpty(blueprintId)) return null;
 
         var itemName = _blueprintLookup.GetName(blueprintId);
         if (string.IsNullOrEmpty(itemName) || itemName == "None") return null;
 
         var enchantments = new List<string>();
-        var enchantsRef = item["m_Enchantments"];
-        if (enchantsRef != null)
+        var enchantmentsRef = item["m_Enchantments"];
+        if (enchantmentsRef != null)
         {
-            foreach (var ench in enchantsRef)
+            var enchantmentsObj = _resolver.Resolve(enchantmentsRef);
+            if (enchantmentsObj != null && enchantmentsObj is JObject enchantmentsJObj)
             {
-                var enchObj = _resolver.Resolve(ench);
-                if (enchObj != null)
+                var facts = enchantmentsJObj["m_Facts"];
+                if (facts != null && facts.HasValues)
                 {
-                    var enchBlueprintId = enchObj["Blueprint"]?.ToString();
-                    if (!string.IsNullOrEmpty(enchBlueprintId))
+                    foreach (var fact in facts)
                     {
-                        var enchName = _blueprintLookup.GetName(enchBlueprintId);
-                        if (!string.IsNullOrEmpty(enchName) && enchName != "None")
+                        if (!(fact is JObject)) continue;
+                        
+                        var enchBlueprintId = fact["Blueprint"]?.ToString();
+                        if (!string.IsNullOrEmpty(enchBlueprintId))
                         {
-                            enchantments.Add(enchName);
+                            var enchName = _blueprintLookup.GetName(enchBlueprintId);
+                            if (!string.IsNullOrEmpty(enchName) && enchName != "None")
+                            {
+                                enchantments.Add(enchName);
+                            }
                         }
                     }
                 }

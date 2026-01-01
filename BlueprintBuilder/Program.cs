@@ -344,7 +344,9 @@ bool ShouldSkipBlueprint(string name)
         return true;
     
     // Skip old/deprecated/copy entries
-    if (name.Contains("_Old") || name.Contains("_Copy") || name.Contains("Deprecated") || 
+    // Check for "_Old" at the end or followed by underscore/number (not part of a word like "OldSycamore")
+    if (name.EndsWith("_Old") || name.Contains("_Old_") || name.Contains("_Old1") || 
+        name.Contains("_Copy") || name.Contains("Deprecated") || 
         name.Contains("Unused") || name.Contains("Obsolete"))
         return true;
     
