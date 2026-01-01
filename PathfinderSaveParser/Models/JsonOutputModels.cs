@@ -87,6 +87,7 @@ public class CharacterJson
     public string? Race { get; set; }
     public List<ClassInfoJson>? Classes { get; set; }
     public AttributesJson? Attributes { get; set; }
+    public SkillsJson? Skills { get; set; }
     public EquipmentJson? Equipment { get; set; }
     public List<SpellbookJson>? Spellbooks { get; set; }
     public List<LevelProgressionJson>? LevelProgression { get; set; }
@@ -113,6 +114,24 @@ public class AttributesJson
     public int Intelligence { get; set; }
     public int Wisdom { get; set; }
     public int Charisma { get; set; }
+}
+
+/// <summary>
+/// Character skills
+/// </summary>
+public class SkillsJson
+{
+    public int? Mobility { get; set; }
+    public int? Athletics { get; set; }
+    public int? Stealth { get; set; }
+    public int? Thievery { get; set; }
+    public int? KnowledgeArcana { get; set; }
+    public int? KnowledgeWorld { get; set; }
+    public int? LoreNature { get; set; }
+    public int? LoreReligion { get; set; }
+    public int? Perception { get; set; }
+    public int? Persuasion { get; set; }
+    public int? UseMagicDevice { get; set; }
 }
 
 /// <summary>

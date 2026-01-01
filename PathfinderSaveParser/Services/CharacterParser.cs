@@ -108,6 +108,12 @@ public class EnhancedCharacterParser
                 sb.Append($"Cha {GetStatValue(stats, "Charisma")}");
                 sb.AppendLine();
                 sb.AppendLine();
+
+                // Skills
+                if (_options.IncludeSkills)
+                {
+                    AppendSkills(stats, sb);
+                }
             }
         }
 
@@ -223,6 +229,65 @@ public class EnhancedCharacterParser
     {
         var statObj = _resolver.Resolve(stats[statName]);
         return statObj?["PermanentValue"]?.ToString() ?? "?";
+    }
+
+    private void AppendSkills(JToken stats, StringBuilder sb)
+    {
+        var skills = new Dictionary<string, int>();
+
+        // Parse each attribute's dependent skills
+        foreach (var attributeName in new[] { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" })
+        {
+            var attrObj = _resolver.Resolve(stats[attributeName]);
+            if (attrObj == null) continue;
+
+            var dependents = attrObj["m_Dependents"];
+            if (dependents == null || !dependents.HasValues) continue;
+
+            foreach (var dependent in dependents)
+            {
+                var resolvedDep = _resolver.Resolve(dependent);
+                if (resolvedDep == null) continue;
+
+                string? typeName = resolvedDep["$type"]?.ToString();
+                if (typeName == null || !typeName.Contains("ModifiableValueSkill")) continue;
+
+                string? skillType = resolvedDep["Type"]?.ToString();
+                int skillValue = (int?)resolvedDep["PermanentValue"] ?? 0;
+
+                // Map skill types to display names
+                string? skillName = skillType switch
+                {
+                    "SkillMobility" => "Mobility",
+                    "SkillAthletics" => "Athletics",
+                    "SkillStealth" => "Stealth",
+                    "SkillThievery" => "Thievery",
+                    "SkillKnowledgeArcana" => "Knowledge (Arcana)",
+                    "SkillKnowledgeWorld" => "Knowledge (World)",
+                    "SkillLoreNature" => "Lore (Nature)",
+                    "SkillLoreReligion" => "Lore (Religion)",
+                    "SkillPerception" => "Perception",
+                    "SkillPersuasion" => "Persuasion",
+                    "SkillUseMagicDevice" => "Use Magic Device",
+                    _ => null
+                };
+
+                if (skillName != null)
+                {
+                    skills[skillName] = skillValue;
+                }
+            }
+        }
+
+        if (skills.Any())
+        {
+            sb.AppendLine("Skills:");
+            foreach (var skill in skills.OrderBy(s => s.Key))
+            {
+                sb.AppendLine($"  {skill.Key}: {skill.Value:+0;-0;0}");
+            }
+            sb.AppendLine();
+        }
     }
 
     private void ParseHistory(JToken? selections, StringBuilder sb)

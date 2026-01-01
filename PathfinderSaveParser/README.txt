@@ -71,6 +71,7 @@ Control what information appears in generated reports:
 
 "ReportOptions": {
   "IncludeStats": true,              // Character ability scores
+  "IncludeSkills": true,             // Character skills (Persuasion, Stealth, etc.)
   "IncludeRace": true,               // Character race
   "IncludeClass": true,              // Classes and archetypes
   "IncludeEquipment": true,          // All equipment sections
@@ -145,6 +146,7 @@ All text output is also displayed in the console.
 ================================================================================
 
 ✓ Character builds (race, classes, abilities)
+✓ Character skills (all 11 skills with modifiers)
 ✓ Level-by-level feat and feature progression
 ✓ Equipment with enchantments (weapons, armor, accessories)
 ✓ Spellcasting information (spell slots per day and known spells)

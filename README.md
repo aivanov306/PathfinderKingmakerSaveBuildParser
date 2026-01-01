@@ -8,6 +8,11 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 - **Character Name**: Displays character name (including custom names if set)
 - **Race & Class**: Shows racial heritage and all classes with archetypes and levels
 - **Base Attributes**: Displays ability scores (Str, Dex, Con, Int, Wis, Cha)
+- **Skills**: Shows all character skills with calculated bonuses:
+  - Mobility, Athletics, Stealth, Thievery
+  - Knowledge (Arcana), Knowledge (World)
+  - Lore (Nature), Lore (Religion)
+  - Perception, Persuasion, Use Magic Device
 - **Equipment**: Shows equipped weapons, armor, and accessories with enchantments
   - Active weapon set (main hand and off-hand)
   - All armor and accessory slots (body, head, neck, belt, cloak, rings, bracers, gloves, boots)
@@ -111,6 +116,7 @@ Control what information is included in generated reports:
 ```json
 "ReportOptions": {
   "IncludeStats": true,              // Character ability scores (Str, Dex, etc.)
+  "IncludeSkills": true,             // Character skills (Persuasion, Stealth, etc.)
   "IncludeRace": true,               // Character race
   "IncludeClass": true,              // Classes, levels, and archetypes
   "IncludeEquipment": true,          // All equipment sections
@@ -325,6 +331,15 @@ Character Name: Valerie
 BUILD SUMMARY
 ================================================================================
 Stats: Str 14, Dex 14, Con 19, Int 9, Wis 10, Cha 16
+
+Skills:
+  Mobility: +8
+  Persuasion: +16
+  Perception: +4
+  Knowledge (Arcana): -1
+  Stealth: +2
+  Thievery: +2
+  Use Magic Device: +13
 
 Race - Human Race
 Class - Fighter Class 9 (Tower Shield Specialist Archetype), Rogue Class 1 (Thug Archetype)

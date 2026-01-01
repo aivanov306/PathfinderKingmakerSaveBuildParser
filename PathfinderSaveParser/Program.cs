@@ -208,7 +208,7 @@ class Program
             Console.WriteLine("Indexing party.json references...");
             var partyResolver = new RefResolver(partyJson);
             var enhancedParser = new EnhancedCharacterParser(blueprintLookup, partyResolver, reportOptions);
-            var jsonBuilder = new JsonOutputBuilder(blueprintLookup, partyResolver);
+            var jsonBuilder = new JsonOutputBuilder(blueprintLookup, partyResolver, reportOptions);
             Console.WriteLine("Reference indexing complete.");
             Console.WriteLine();
             Console.WriteLine(new string('=', 80));
@@ -344,8 +344,12 @@ class Program
             
             var currentState = new CurrentStateJson
             {
-                Kingdom = playerSave.Kingdom != null ? jsonBuilder.BuildKingdomJson(playerSave.Kingdom, playerSave.Money) : null,
-                Inventory = jsonBuilder.BuildInventoryJson(playerSave.SharedStash, partyJson),
+                Kingdom = (reportOptions.IncludeKingdomStats && playerSave.Kingdom != null) 
+                    ? jsonBuilder.BuildKingdomJson(playerSave.Kingdom, playerSave.Money) 
+                    : null,
+                Inventory = reportOptions.IncludeInventory 
+                    ? jsonBuilder.BuildInventoryJson(playerSave.SharedStash, partyJson) 
+                    : null,
                 Characters = allCharactersJson
             };
 

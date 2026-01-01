@@ -10,11 +10,13 @@ public class JsonOutputBuilder
 {
     private readonly BlueprintLookupService _blueprintLookup;
     private readonly RefResolver? _resolver;
+    private readonly ReportOptions _options;
 
-    public JsonOutputBuilder(BlueprintLookupService blueprintLookup, RefResolver? resolver = null)
+    public JsonOutputBuilder(BlueprintLookupService blueprintLookup, RefResolver? resolver = null, ReportOptions? options = null)
     {
         _blueprintLookup = blueprintLookup;
         _resolver = resolver;
+        _options = options ?? new ReportOptions();
     }
 
     public KingdomStatsJson? BuildKingdomJson(Kingdom? kingdom, int money)
@@ -270,6 +272,15 @@ public class JsonOutputBuilder
                 var character = ParseSingleCharacterJson(rawUnit);
                 if (character != null)
                 {
+                    // Apply ReportOptions filtering
+                    if (!_options.IncludeStats) character.Attributes = null;
+                    if (!_options.IncludeSkills) character.Skills = null;
+                    if (!_options.IncludeRace) character.Race = null;
+                    if (!_options.IncludeClass) character.Classes = null;
+                    if (!_options.IncludeEquipment) character.Equipment = null;
+                    if (!_options.IncludeSpellcasting) character.Spellbooks = null;
+                    if (!_options.IncludeLevelHistory) character.LevelProgression = null;
+                    
                     characters.Add(character);
                 }
             }
@@ -378,6 +389,9 @@ public class JsonOutputBuilder
                 Wisdom = GetStatValue(stats, "Wisdom"),
                 Charisma = GetStatValue(stats, "Charisma")
             };
+
+            // Get skills
+            character.Skills = ParseSkillsJson(stats);
         }
 
         // Get equipment
@@ -397,6 +411,76 @@ public class JsonOutputBuilder
         if (_resolver == null) return 0;
         var statObj = _resolver.Resolve(stats[statName]);
         return (int?)statObj?["PermanentValue"] ?? 0;
+    }
+
+    private SkillsJson? ParseSkillsJson(JToken stats)
+    {
+        if (_resolver == null) return null;
+
+        var skills = new SkillsJson();
+
+        // Parse each attribute's dependent skills
+        // Skills are stored as m_Dependents array on each attribute stat
+        foreach (var attributeName in new[] { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" })
+        {
+            var attrObj = _resolver.Resolve(stats[attributeName]);
+            if (attrObj == null) continue;
+
+            var dependents = attrObj["m_Dependents"];
+            if (dependents == null || !dependents.HasValues) continue;
+
+            foreach (var dependent in dependents)
+            {
+                var resolvedDep = _resolver.Resolve(dependent);
+                if (resolvedDep == null) continue;
+
+                string? typeName = resolvedDep["$type"]?.ToString();
+                if (typeName == null || !typeName.Contains("ModifiableValueSkill")) continue;
+
+                string? skillType = resolvedDep["Type"]?.ToString();
+                int skillValue = (int?)resolvedDep["PermanentValue"] ?? 0;
+
+                // Map skill types to properties
+                switch (skillType)
+                {
+                    case "SkillMobility":
+                        skills.Mobility = skillValue;
+                        break;
+                    case "SkillAthletics":
+                        skills.Athletics = skillValue;
+                        break;
+                    case "SkillStealth":
+                        skills.Stealth = skillValue;
+                        break;
+                    case "SkillThievery":
+                        skills.Thievery = skillValue;
+                        break;
+                    case "SkillKnowledgeArcana":
+                        skills.KnowledgeArcana = skillValue;
+                        break;
+                    case "SkillKnowledgeWorld":
+                        skills.KnowledgeWorld = skillValue;
+                        break;
+                    case "SkillLoreNature":
+                        skills.LoreNature = skillValue;
+                        break;
+                    case "SkillLoreReligion":
+                        skills.LoreReligion = skillValue;
+                        break;
+                    case "SkillPerception":
+                        skills.Perception = skillValue;
+                        break;
+                    case "SkillPersuasion":
+                        skills.Persuasion = skillValue;
+                        break;
+                    case "SkillUseMagicDevice":
+                        skills.UseMagicDevice = skillValue;
+                        break;
+                }
+            }
+        }
+
+        return skills;
     }
 
     private EquipmentJson? ParseEquipmentJson(JToken descriptor)

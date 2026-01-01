@@ -7,6 +7,7 @@ public class ReportOptions
 {
     // Character Information Options
     public bool IncludeStats { get; set; } = true;
+    public bool IncludeSkills { get; set; } = true;
     public bool IncludeRace { get; set; } = true;
     public bool IncludeClass { get; set; } = true;
     public bool IncludeEquipment { get; set; } = true;
