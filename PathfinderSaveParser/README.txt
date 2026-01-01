@@ -79,6 +79,7 @@ Control what information appears in generated reports:
   "IncludeKingdomStats": true,       // Kingdom statistics
   "IncludeKingdomAdvisors": true,    // Kingdom advisor assignments
   "IncludeInventory": true,          // Personal chest inventory
+  "IncludeUnclaimedSettlements": false, // Include unclaimed regions in settlements
   "IncludeActiveWeaponSet": true,    // Current weapon set
   "IncludeArmor": true,              // Equipped armor
   "IncludeAccessories": true,        // Rings, belts, etc.
@@ -133,10 +134,18 @@ TEXT FILES (Human-readable reports):
 - all_characters.txt - Complete character builds with equipment
 
 JSON FILES (Structured data for programmatic access):
-- CurrentState.json - Combined file with all data (kingdom, inventory, characters)
+- CurrentState.json - Combined file with all data (kingdom, inventory, characters, locations, settlements)
+  We can find information:
+  * Kingdom statistics and advisors
+  * Personal chest and shared inventory
+  * All characters with full builds
+  * Explored map locations
+  * Kingdom settlements with development levels
 - kingdom_stats.json - Kingdom statistics in JSON format
 - inventory.json - Both inventories in JSON format
 - all_characters.json - All character builds in JSON format
+- explored_locations.json - List of all explored map locations
+- settlements.json - Kingdom settlements with Level, Name, and finished buildings by region
 
 All text output is also displayed in the console.
 
@@ -154,6 +163,8 @@ All text output is also displayed in the console.
 ✓ Kingdom advisors (shows assignments and availability)
 ✓ Gold tracking (displays current party gold)
 ✓ Inventory listing (personal chest + shared party inventory)
+✓ Explored locations (all discovered map locations)
+✓ Kingdom settlements (built buildings by region)
 ✓ Character ordering (customize output order)
 ✓ Character exclusion (hide specific characters)
 ✓ Support for main character + all companions

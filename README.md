@@ -57,10 +57,21 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 
 ### JSON Export
 - **CurrentState.json**: Combined file with complete game state
+
+We can find information:
+- Kingdom statistics and advisors
+- Personal chest and shared inventory
+- All characters with full builds
+- Explored map locations
+- Kingdom settlements with development levels
+
+Detailed structure:
   - Kingdom: Name, alignment, gold, build points, unrest, stats (with ranks), advisor assignments
   - Inventory: Personal chest and shared inventory, categorized by type (weapons, armor, accessories, usables, other)
   - Characters: Full character data including name, race, classes, attributes, equipment, spellbooks, level progression
-- **Separate JSON files**: Individual files for kingdom, inventory, and characters
+  - ExploredLocations: List of all explored map locations
+  - Settlements: List of all settlements with Level, Name, and finished buildings
+- **Separate JSON files**: Individual files for kingdom, inventory, characters, explored locations, and settlements
 - **Structured format**: Properly formatted JSON with indentation for readability
 - **Type information**: Equipment includes type data (weapon types, armor types)
 - **Categorization**: Items grouped by category with totals and counts
@@ -124,6 +135,7 @@ Control what information is included in generated reports:
   "IncludeKingdomStats": true,       // Kingdom statistics report
   "IncludeKingdomAdvisors": true,    // Kingdom advisor assignments
   "IncludeInventory": true,          // Personal chest inventory
+  "IncludeUnclaimedSettlements": false, // Include unclaimed regions in settlements export
   "IncludeActiveWeaponSet": true,    // Currently equipped weapons
   "IncludeArmor": true,              // Equipped armor
   "IncludeAccessories": true,        // Rings, belts, cloaks, etc.
@@ -201,7 +213,9 @@ PathfinderKingmakerSaveBuildParser/
 │       ├── CurrentState.json          # Combined game state (JSON)
 │       ├── kingdom_stats.json         # Kingdom data (JSON)
 │       ├── inventory.json             # Inventory data (JSON)
-│       └── all_characters.json        # Character data (JSON)
+│       ├── all_characters.json        # Character data (JSON)
+│       ├── explored_locations.json    # Explored map locations (JSON)
+│       └── settlements.json           # Kingdom settlements and buildings (JSON)
 ├── BlueprintBuilder/
 │   └── Program.cs                     # Utility to rebuild blueprint database
 └── Blueprints2.1.4/                   # Blueprint dump folder (not in repository)

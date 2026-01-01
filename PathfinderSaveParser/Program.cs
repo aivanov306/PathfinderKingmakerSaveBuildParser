@@ -350,7 +350,9 @@ class Program
                 Inventory = reportOptions.IncludeInventory 
                     ? jsonBuilder.BuildInventoryJson(playerSave.SharedStash, partyJson) 
                     : null,
-                Characters = allCharactersJson
+                Characters = allCharactersJson,
+                ExploredLocations = jsonBuilder.BuildExploredLocationsJson(playerSave.GlobalMap),
+                Settlements = jsonBuilder.BuildSettlementsJson(playerSave.Kingdom)
             };
 
             // Save combined JSON
@@ -378,6 +380,20 @@ class Program
                 var charactersJson = JsonConvert.SerializeObject(currentState.Characters, Formatting.Indented);
                 var charactersJsonPath = Path.Combine(outputDir, "all_characters.json");
                 await File.WriteAllTextAsync(charactersJsonPath, charactersJson);
+            }
+
+            if (currentState.ExploredLocations != null && currentState.ExploredLocations.Any())
+            {
+                var locationsJson = JsonConvert.SerializeObject(currentState.ExploredLocations, Formatting.Indented);
+                var locationsJsonPath = Path.Combine(outputDir, "explored_locations.json");
+                await File.WriteAllTextAsync(locationsJsonPath, locationsJson);
+            }
+
+            if (currentState.Settlements != null && currentState.Settlements.Any())
+            {
+                var settlementsJson = JsonConvert.SerializeObject(currentState.Settlements, Formatting.Indented);
+                var settlementsJsonPath = Path.Combine(outputDir, "settlements.json");
+                await File.WriteAllTextAsync(settlementsJsonPath, settlementsJson);
             }
 
             Console.WriteLine("JSON files saved successfully.");

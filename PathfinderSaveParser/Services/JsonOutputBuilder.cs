@@ -256,6 +256,74 @@ public class JsonOutputBuilder
         return System.Text.RegularExpressions.Regex.Replace(position, "([a-z])([A-Z])", "$1 $2");
     }
 
+    public List<string> BuildExploredLocationsJson(GlobalMap? globalMap)
+    {
+        var exploredLocations = new List<string>();
+        
+        if (globalMap?.Locations == null) return exploredLocations;
+
+        foreach (var locationEntry in globalMap.Locations)
+        {
+            if (locationEntry.Value?.IsExplored == true && !string.IsNullOrEmpty(locationEntry.Value.Blueprint))
+            {
+                var locationName = _blueprintLookup.GetName(locationEntry.Value.Blueprint);
+                if (!string.IsNullOrEmpty(locationName) && locationName != "None")
+                {
+                    exploredLocations.Add(locationName);
+                }
+            }
+        }
+
+        return exploredLocations.OrderBy(l => l).ToList();
+    }
+
+    public List<SettlementJson> BuildSettlementsJson(Kingdom? kingdom)
+    {
+        var settlements = new List<SettlementJson>();
+        
+        if (kingdom?.Regions == null) return settlements;
+
+        foreach (var region in kingdom.Regions)
+        {
+            if (region.Settlement != null)
+            {
+                // Skip unclaimed regions unless explicitly requested
+                if (!region.IsClaimed && !_options.IncludeUnclaimedSettlements)
+                    continue;
+
+                var regionName = _blueprintLookup.GetName(region.Blueprint ?? "");
+                if (string.IsNullOrEmpty(regionName) || regionName == "None")
+                    continue;
+
+                var buildings = new List<string>();
+                if (region.Settlement.Buildings?.Facts != null)
+                {
+                    foreach (var building in region.Settlement.Buildings.Facts)
+                    {
+                        if (building.IsFinished && !string.IsNullOrEmpty(building.Blueprint))
+                        {
+                            var buildingName = _blueprintLookup.GetName(building.Blueprint);
+                            if (!string.IsNullOrEmpty(buildingName) && buildingName != "None")
+                            {
+                                buildings.Add(buildingName);
+                            }
+                        }
+                    }
+                }
+
+                settlements.Add(new SettlementJson
+                {
+                    RegionName = regionName,
+                    SettlementName = region.Settlement.Name,
+                    Level = region.Settlement.Level,
+                    Buildings = buildings.OrderBy(b => b).ToList()
+                });
+            }
+        }
+
+        return settlements.OrderBy(s => s.RegionName).ToList();
+    }
+
     public List<CharacterJson> BuildCharactersJson(JToken? partyJson)
     {
         var characters = new List<CharacterJson>();

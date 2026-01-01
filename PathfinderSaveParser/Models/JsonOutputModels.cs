@@ -8,6 +8,8 @@ public class CurrentStateJson
     public KingdomStatsJson? Kingdom { get; set; }
     public InventoryJson? Inventory { get; set; }
     public List<CharacterJson>? Characters { get; set; }
+    public List<string>? ExploredLocations { get; set; }
+    public List<SettlementJson>? Settlements { get; set; }
 }
 
 /// <summary>
@@ -181,4 +183,15 @@ public class LevelProgressionJson
 {
     public int Level { get; set; }
     public List<string>? Features { get; set; }
+}
+
+/// <summary>
+/// Settlement with buildings
+/// </summary>
+public class SettlementJson
+{
+    public string? RegionName { get; set; }
+    public string? SettlementName { get; set; }
+    public string? Level { get; set; }
+    public List<string>? Buildings { get; set; }
 }

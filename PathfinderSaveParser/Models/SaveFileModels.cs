@@ -21,6 +21,9 @@ public class PlayerSaveFile
 
     [JsonProperty("SharedStash")]
     public ItemCollection? SharedStash { get; set; }
+
+    [JsonProperty("m_GlobalMap")]
+    public GlobalMap? GlobalMap { get; set; }
 }
 
 public class ItemCollection
@@ -69,6 +72,9 @@ public class Kingdom
 
     [JsonProperty("Leaders")]
     public List<KingdomLeader>? Leaders { get; set; }
+
+    [JsonProperty("Regions")]
+    public List<KingdomRegion>? Regions { get; set; }
 }
 
 public class KingdomLeader
@@ -105,4 +111,69 @@ public class KingdomStat
 
     [JsonProperty("Value")]
     public int Value { get; set; }
+}
+
+public class GlobalMap
+{
+    [JsonProperty("Locations")]
+    public List<LocationEntry>? Locations { get; set; }
+}
+
+public class LocationEntry
+{
+    [JsonProperty("Key")]
+    public string? Key { get; set; }
+
+    [JsonProperty("Value")]
+    public LocationData? Value { get; set; }
+}
+
+public class LocationData
+{
+    [JsonProperty("Blueprint")]
+    public string? Blueprint { get; set; }
+
+    [JsonProperty("IsExplored")]
+    public bool IsExplored { get; set; }
+
+    [JsonProperty("IsSeen")]
+    public bool IsSeen { get; set; }
+
+    [JsonProperty("IsRevealed")]
+    public bool IsRevealed { get; set; }
+}
+
+public class KingdomRegion
+{
+    [JsonProperty("Blueprint")]
+    public string? Blueprint { get; set; }
+
+    [JsonProperty("Settlement")]
+    public Settlement? Settlement { get; set; }
+
+    [JsonProperty("IsClaimed")]
+    public bool IsClaimed { get; set; }
+}
+
+public class Settlement
+{
+    [JsonProperty("m_Buildings")]
+    public BuildingsContainer? Buildings { get; set; }
+    public string? Level { get; set; }
+    public string? Name { get; set; }
+}
+
+public class BuildingsContainer
+{
+    [JsonProperty("m_Facts")]
+    public List<SettlementBuilding>? Facts { get; set; }
+}
+
+public class SettlementBuilding
+{
+    [JsonProperty("Blueprint")]
+    public string? Blueprint { get; set; }
+
+    [JsonProperty("IsFinished")]
+    public bool IsFinished { get; set; }
 }
