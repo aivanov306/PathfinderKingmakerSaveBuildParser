@@ -503,9 +503,15 @@ public class JsonOutputBuilder
                 if (resolvedDep == null) continue;
 
                 string? typeName = resolvedDep["$type"]?.ToString();
-                if (typeName == null || !typeName.Contains("ModifiableValueSkill")) continue;
+                string? typeProperty = resolvedDep["Type"]?.ToString();
+                
+                // Check if it's a skill: either has ModifiableValueSkill in $type, or Type starts with "Skill"
+                bool isSkill = (typeName != null && typeName.Contains("ModifiableValueSkill")) ||
+                              (typeProperty != null && typeProperty.StartsWith("Skill"));
+                              
+                if (!isSkill) continue;
 
-                string? skillType = resolvedDep["Type"]?.ToString();
+                string? skillType = typeProperty;
                 int skillValue = (int?)resolvedDep["PermanentValue"] ?? 0;
 
                 // Map skill types to properties
