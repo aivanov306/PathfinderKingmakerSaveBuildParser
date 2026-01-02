@@ -675,23 +675,25 @@ public class JsonOutputBuilder
         if (_resolver == null) return null;
 
         var spellbooks = new List<SpellbookJson>();
-        var demilichRef = descriptor["Demilich"];
-        var demilich = _resolver.Resolve(demilichRef);
-        if (demilich == null) return null;
-
-        var spellbooksArray = demilich["m_Spellbooks"];
+        
+        // Get spellbooks directly from descriptor (like the text parser does)
+        var spellbooksArray = descriptor["m_Spellbooks"];
         if (spellbooksArray == null || !spellbooksArray.HasValues) return null;
 
-        foreach (var spellbookRef in spellbooksArray)
+        foreach (var spellbookEntry in spellbooksArray)
         {
-            var spellbook = _resolver.Resolve(spellbookRef);
+            // Each entry has a "Value" that references the spellbook
+            var spellbookData = spellbookEntry["Value"];
+            if (spellbookData == null) continue;
+
+            var spellbook = _resolver.Resolve(spellbookData);
             if (spellbook == null) continue;
 
             var classBlueprint = spellbook["Blueprint"]?.ToString();
             if (string.IsNullOrEmpty(classBlueprint)) continue;
 
             var className = _blueprintLookup.GetName(classBlueprint);
-            var casterLevel = (int?)spellbook["CasterLevel"] ?? 0;
+            var casterLevel = (int?)spellbook["m_CasterLevelInternal"] ?? 0;
 
             var spellbookJson = new SpellbookJson
             {
@@ -703,38 +705,38 @@ public class JsonOutputBuilder
 
             // Parse spell slots per day
             var memorizedSpells = spellbook["m_MemorizedSpells"];
-            if (memorizedSpells != null)
+            if (memorizedSpells != null && memorizedSpells.HasValues)
             {
-                foreach (var levelEntry in memorizedSpells)
+                int level = 0;
+                foreach (var levelSlots in memorizedSpells)
                 {
-                    var spellLevel = (int?)levelEntry["Key"] ?? 0;
-                    var spells = levelEntry["Value"];
-                    if (spells != null && spells.HasValues)
+                    if (levelSlots != null && levelSlots.HasValues)
                     {
-                        spellbookJson.SpellSlotsPerDay[spellLevel] = spells.Count();
+                        spellbookJson.SpellSlotsPerDay[level] = levelSlots.Count();
                     }
+                    level++;
                 }
             }
 
             // Parse known spells
             var knownSpells = spellbook["m_KnownSpells"];
-            if (knownSpells != null)
+            if (knownSpells != null && knownSpells.HasValues)
             {
-                foreach (var levelEntry in knownSpells)
+                int level = 0;
+                foreach (var levelSpells in knownSpells)
                 {
-                    var spellLevel = (int?)levelEntry["Key"] ?? 0;
-                    var spells = levelEntry["Value"];
-                    
-                    if (spells != null && spells.HasValues)
+                    if (levelSpells != null && levelSpells.HasValues)
                     {
                         var spellNames = new List<string>();
-                        foreach (var spell in spells)
+                        foreach (var spell in levelSpells)
                         {
                             var spellBlueprint = spell["Blueprint"]?.ToString();
                             if (!string.IsNullOrEmpty(spellBlueprint))
                             {
                                 var spellName = _blueprintLookup.GetName(spellBlueprint);
-                                if (!string.IsNullOrEmpty(spellName) && spellName != "None")
+                                if (!string.IsNullOrEmpty(spellName) && 
+                                    !spellName.StartsWith("Blueprint_") && 
+                                    spellName != "None")
                                 {
                                     spellNames.Add(spellName);
                                 }
@@ -742,9 +744,10 @@ public class JsonOutputBuilder
                         }
                         if (spellNames.Any())
                         {
-                            spellbookJson.KnownSpells[spellLevel] = spellNames;
+                            spellbookJson.KnownSpells[level] = spellNames;
                         }
                     }
+                    level++;
                 }
             }
 

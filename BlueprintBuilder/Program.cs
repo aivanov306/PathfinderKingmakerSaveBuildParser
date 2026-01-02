@@ -374,7 +374,8 @@ bool ShouldSkipBlueprint(string name)
         return true;
     
     // Skip very short generic names (likely internal identifiers)
-    if (name.Length <= 4)
+    // Changed from <= 4 to <= 3 to allow legitimate 4-letter names like "Shop", "Daze", "Bard", etc.
+    if (name.Length <= 3)
         return true;
     
     return false;
