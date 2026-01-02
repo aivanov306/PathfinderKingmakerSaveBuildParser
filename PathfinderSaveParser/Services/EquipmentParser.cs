@@ -65,6 +65,9 @@ public class EquipmentParser
             ParseArmorAndAccessories(body, sb);
         }
         
+        // Parse quick slots (potions, scrolls, rods, wands)
+        ParseQuickSlots(body, sb);
+        
         return sb.ToString();
     }
 
@@ -137,6 +140,41 @@ public class EquipmentParser
             if (!_options.ShowEmptySlots && itemInfo == "(empty)") continue;
             
             sb.AppendLine($"  {displayName,-10}: {itemInfo}");
+        }
+    }
+
+    private void ParseQuickSlots(JToken body, StringBuilder sb)
+    {
+        if (body == null || body.Type != JTokenType.Object) return;
+        
+        var quickSlots = body["m_QuickSlots"];
+        if (quickSlots == null || !quickSlots.HasValues) return;
+        
+        var items = new List<string>();
+        int slotNumber = 1;
+        
+        foreach (var slotRef in quickSlots)
+        {
+            var item = GetItemFromSlot(slotRef);
+            if (item != null)
+            {
+                var itemInfo = GetItemInfo(item);
+                if (itemInfo != "(empty)")
+                {
+                    items.Add($"  Slot {slotNumber}: {itemInfo}");
+                }
+            }
+            slotNumber++;
+        }
+        
+        if (items.Any())
+        {
+            sb.AppendLine();
+            sb.AppendLine("Quick Slots (Potions, Scrolls, Rods, Wands):");
+            foreach (var item in items)
+            {
+                sb.AppendLine(item);
+            }
         }
     }
 

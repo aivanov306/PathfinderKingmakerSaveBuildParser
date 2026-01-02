@@ -158,6 +158,7 @@ All text output is also displayed in the console.
 ✓ Character skills (all 11 skills with modifiers)
 ✓ Level-by-level feat and feature progression
 ✓ Equipment with enchantments (weapons, armor, accessories)
+✓ Quick slots (potions, scrolls, wands, rods)
 ✓ Spellcasting information (spell slots per day and known spells)
 ✓ Kingdom statistics (all 10 stats with ranks)
 ✓ Kingdom advisors (shows assignments and availability)

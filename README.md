@@ -16,6 +16,7 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 - **Equipment**: Shows equipped weapons, armor, and accessories with enchantments
   - Active weapon set (main hand and off-hand)
   - All armor and accessory slots (body, head, neck, belt, cloak, rings, bracers, gloves, boots)
+  - Quick slots (potions, scrolls, wands, rods) with slot numbers
   - Equipment types displayed in brackets (e.g., [Greatsword], [Fullplate], [Tower Shield])
   - Item enchantments displayed inline
   - Distinguishes between empty slots, shields, and dual-wielding configurations
@@ -377,6 +378,10 @@ Armor & Accessories:
   Bracers   : (empty)
   Gloves    : Crazy Scientists Gloves Item (Acid Resistance 15 Enchant, Fire Resistance 15 Enchant)
   Boots     : Boots Of Swift Foot (Speed Increase)
+
+Quick Slots (Potions, Scrolls, Rods, Wands):
+  Slot 1: Potion Of Cure Light Wounds
+  Slot 2: Potion Of Shield Of Faith
 
 
 LEVEL-BY-LEVEL BUILD HISTORY

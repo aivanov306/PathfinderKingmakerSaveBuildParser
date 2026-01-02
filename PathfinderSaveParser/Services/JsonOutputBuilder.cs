@@ -593,6 +593,25 @@ public class JsonOutputBuilder
         equipment.Gloves = ParseEquipmentSlotJson(body["Gloves"]);
         equipment.Boots = ParseEquipmentSlotJson(body["Feet"]);
 
+        // Parse quick slots (potions, scrolls, rods, wands)
+        var quickSlots = body["m_QuickSlots"];
+        if (quickSlots != null && quickSlots.HasValues)
+        {
+            var quickSlotsList = new List<EquipmentSlotJson>();
+            foreach (var slotRef in quickSlots)
+            {
+                var slot = ParseEquipmentSlotJson(slotRef);
+                if (slot != null)
+                {
+                    quickSlotsList.Add(slot);
+                }
+            }
+            if (quickSlotsList.Any())
+            {
+                equipment.QuickSlots = quickSlotsList;
+            }
+        }
+
         return equipment;
     }
 

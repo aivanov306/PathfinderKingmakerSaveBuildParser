@@ -153,6 +153,7 @@ public class EquipmentJson
     public EquipmentSlotJson? Bracers { get; set; }
     public EquipmentSlotJson? Gloves { get; set; }
     public EquipmentSlotJson? Boots { get; set; }
+    public List<EquipmentSlotJson>? QuickSlots { get; set; }
 }
 
 /// <summary>
