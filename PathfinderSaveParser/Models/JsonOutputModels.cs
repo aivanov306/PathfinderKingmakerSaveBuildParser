@@ -6,10 +6,10 @@ namespace PathfinderSaveParser.Models;
 public class CurrentStateJson
 {
     public KingdomStatsJson? Kingdom { get; set; }
-    public InventoryJson? Inventory { get; set; }
     public List<CharacterJson>? Characters { get; set; }
-    public List<string>? ExploredLocations { get; set; }
     public List<SettlementJson>? Settlements { get; set; }
+    public List<string>? ExploredLocations { get; set; }
+    public InventoryJson? Inventory { get; set; }
 }
 
 /// <summary>
