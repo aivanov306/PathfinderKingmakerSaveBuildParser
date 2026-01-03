@@ -27,6 +27,9 @@ class Program
             var reportOptions = new ReportOptions();
             config.GetSection("ReportOptions").Bind(reportOptions);
             
+            // Load BPPerTurn override from config (nullable)
+            int? bpPerTurnOverride = config.GetValue<int?>("BPPerTurn");
+            
             // Load character display order from config
             var characterDisplayOrder = config.GetSection("CharacterDisplayOrder").Get<List<string>>() ?? new List<string>();
             var excludeCharacters = config.GetSection("ExcludeCharacters").Get<List<string>>() ?? new List<string>();
@@ -342,7 +345,7 @@ class Program
             var currentState = new CurrentStateJson
             {
                 Kingdom = (reportOptions.IncludeKingdomStats && playerSave.Kingdom != null) 
-                    ? jsonBuilder.BuildKingdomJson(playerSave.Kingdom, playerSave.Money, playerSave.GameTime) 
+                    ? jsonBuilder.BuildKingdomJson(playerSave.Kingdom, playerSave.Money, playerSave.GameTime, bpPerTurnOverride) 
                     : null,
                 Inventory = reportOptions.IncludeInventory 
                     ? jsonBuilder.BuildInventoryJson(playerSave.SharedStash, partyJson) 

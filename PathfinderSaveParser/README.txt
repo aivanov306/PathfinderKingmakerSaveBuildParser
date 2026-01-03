@@ -55,7 +55,8 @@ FILE LOCATION SETTINGS
 ----------------------
 {
   "PathfinderSaveLocation": "path/to/your/saves",
-  "DefaultSaveFile": "Auto_1.zks"
+  "DefaultSaveFile": "Auto_1.zks",
+  "BPPerTurn": null
 }
 
 - PathfinderSaveLocation: Custom save location (supports environment variables)
@@ -63,6 +64,11 @@ FILE LOCATION SETTINGS
   * If specified and exists → uses that exact save
   * If specified but missing → falls back to most recent save
   * If empty → always uses most recent save
+- BPPerTurn: Build Points per turn override (optional)
+  * Save files only store base BP income (excludes buildings/trade bonuses)
+  * Set to null (default) → shows "Unknown" in output
+  * Set to a number (e.g., 15) → uses that value
+  * Manually specify your actual BP/turn including all modifiers
 
 
 REPORT OPTIONS

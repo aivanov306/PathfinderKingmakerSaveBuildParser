@@ -23,7 +23,7 @@ public class KingdomStatsJson
     public int Days { get; set; }
     public int Gold { get; set; }
     public int BuildPoints { get; set; }
-    public int BuildPointsPerTurn { get; set; }
+    public int? BuildPointsPerTurn { get; set; }
     public string? UnrestLevel { get; set; }
     public List<KingdomStatJson>? Stats { get; set; }
     public List<AdvisorJson>? Advisors { get; set; }

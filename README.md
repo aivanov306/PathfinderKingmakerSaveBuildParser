@@ -132,7 +132,8 @@ Edit `appsettings.json` to customize save file handling and report output:
 ```json
 {
   "PathfinderSaveLocation": "%USERPROFILE%\\AppData\\LocalLow\\Owlcat Games\\Pathfinder Kingmaker\\Saved Games",
-  "DefaultSaveFile": "Auto_1.zks"
+  "DefaultSaveFile": "Auto_1.zks",
+  "BPPerTurn": null
 }
 ```
 
@@ -144,6 +145,11 @@ Edit `appsettings.json` to customize save file handling and report output:
   - If specified and exists → uses that exact save file
   - If specified but doesn't exist → falls back to the most recently modified save
   - If empty or not specified → always uses the most recently modified save
+- **BPPerTurn**: Build Points per turn override (optional)
+  - The save file only contains base BP income (excludes building bonuses and trade agreements)
+  - Set to `null` (default) → displays "Unknown" in reports
+  - Set to a number (e.g., `15`) → displays that value instead
+  - Use this to manually specify your actual BP per turn including all modifiers
 
 #### Report Options
 

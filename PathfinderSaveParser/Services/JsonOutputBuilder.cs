@@ -19,7 +19,7 @@ public class JsonOutputBuilder
         _options = options ?? new ReportOptions();
     }
 
-    public KingdomStatsJson? BuildKingdomJson(Kingdom? kingdom, int money, string? gameTime)
+    public KingdomStatsJson? BuildKingdomJson(Kingdom? kingdom, int money, string? gameTime, int? bpPerTurnOverride)
     {
         if (kingdom == null) return null;
 
@@ -42,7 +42,7 @@ public class JsonOutputBuilder
             Days = days,
             Gold = money,
             BuildPoints = kingdom.BuildPoints,
-            BuildPointsPerTurn = kingdom.BuildPointsPerTurn,
+            BuildPointsPerTurn = bpPerTurnOverride,
             UnrestLevel = kingdom.Unrest,
             Stats = new List<KingdomStatJson>(),
             Advisors = new List<AdvisorJson>()

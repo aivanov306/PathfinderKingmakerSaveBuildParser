@@ -35,7 +35,7 @@ public class TextFileGenerator
         sb.AppendLine($"Days: {kingdom.Days}");
         sb.AppendLine($"Gold: {kingdom.Gold:N0}");
         sb.AppendLine($"Build Points: {kingdom.BuildPoints}");
-        sb.AppendLine($"Build Points Per Turn: {kingdom.BuildPointsPerTurn}");
+        sb.AppendLine($"Build Points Per Turn: {(kingdom.BuildPointsPerTurn.HasValue ? kingdom.BuildPointsPerTurn.Value.ToString() : "Unknown")}");
         sb.AppendLine($"Unrest Level: {kingdom.UnrestLevel}");
         sb.AppendLine();
 
