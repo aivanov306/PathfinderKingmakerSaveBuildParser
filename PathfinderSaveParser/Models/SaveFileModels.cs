@@ -39,6 +39,21 @@ public class InventoryItem
 
     [JsonProperty("m_Count")]
     public int Count { get; set; }
+
+    [JsonProperty("m_Enchantments")]
+    public EnchantmentCollection? Enchantments { get; set; }
+}
+
+public class EnchantmentCollection
+{
+    [JsonProperty("m_Facts")]
+    public List<EnchantmentReference>? Facts { get; set; }
+}
+
+public class EnchantmentReference
+{
+    [JsonProperty("Blueprint")]
+    public string? Blueprint { get; set; }
 }
 
 public class CharacterReference

@@ -313,10 +313,6 @@ class Program
                 Console.WriteLine("No characters found in party data.");
             }
 
-            // Generate JSON output files
-            Console.WriteLine();
-            Console.WriteLine("Generating JSON output files...");
-            
             // Build all characters as JSON
             var allCharactersJson = jsonBuilder.BuildCharactersJson(partyJson);
             
@@ -342,6 +338,7 @@ class Program
                     .ToList();
             }
             
+            // Build current state data model
             var currentState = new CurrentStateJson
             {
                 Kingdom = (reportOptions.IncludeKingdomStats && playerSave.Kingdom != null) 
@@ -355,48 +352,19 @@ class Program
                 Settlements = jsonBuilder.BuildSettlementsJson(playerSave.Kingdom)
             };
 
-            // Save combined JSON
-            var currentStateJson = JsonConvert.SerializeObject(currentState, Formatting.Indented);
-            var currentStatePath = Path.Combine(outputDir, "CurrentState.json");
-            await File.WriteAllTextAsync(currentStatePath, currentStateJson);
-
-            // Save separate JSON files
-            if (currentState.Kingdom != null)
-            {
-                var kingdomJson = JsonConvert.SerializeObject(currentState.Kingdom, Formatting.Indented);
-                var kingdomJsonPath = Path.Combine(outputDir, "kingdom_stats.json");
-                await File.WriteAllTextAsync(kingdomJsonPath, kingdomJson);
-            }
-
-            if (currentState.Inventory != null)
-            {
-                var inventoryJson = JsonConvert.SerializeObject(currentState.Inventory, Formatting.Indented);
-                var inventoryJsonPath = Path.Combine(outputDir, "inventory.json");
-                await File.WriteAllTextAsync(inventoryJsonPath, inventoryJson);
-            }
-
-            if (currentState.Characters != null && currentState.Characters.Any())
-            {
-                var charactersJson = JsonConvert.SerializeObject(currentState.Characters, Formatting.Indented);
-                var charactersJsonPath = Path.Combine(outputDir, "all_characters.json");
-                await File.WriteAllTextAsync(charactersJsonPath, charactersJson);
-            }
-
-            if (currentState.ExploredLocations != null && currentState.ExploredLocations.Any())
-            {
-                var locationsJson = JsonConvert.SerializeObject(currentState.ExploredLocations, Formatting.Indented);
-                var locationsJsonPath = Path.Combine(outputDir, "explored_locations.json");
-                await File.WriteAllTextAsync(locationsJsonPath, locationsJson);
-            }
-
-            if (currentState.Settlements != null && currentState.Settlements.Any())
-            {
-                var settlementsJson = JsonConvert.SerializeObject(currentState.Settlements, Formatting.Indented);
-                var settlementsJsonPath = Path.Combine(outputDir, "settlements.json");
-                await File.WriteAllTextAsync(settlementsJsonPath, settlementsJson);
-            }
-
+            // Generate all JSON files using JsonFileGenerator service
+            Console.WriteLine();
+            Console.WriteLine("Generating JSON output files...");
+            var jsonFileGenerator = new JsonFileGenerator(outputDir);
+            await jsonFileGenerator.GenerateAllJsonFilesAsync(currentState);
             Console.WriteLine("JSON files saved successfully.");
+
+            // Generate all text files using TextFileGenerator service
+            Console.WriteLine();
+            Console.WriteLine("Generating text output files...");
+            var textFileGenerator = new TextFileGenerator(outputDir);
+            await textFileGenerator.GenerateAllTextFilesAsync(currentState);
+            Console.WriteLine("Text files saved successfully.");
 
             Console.WriteLine();
             Console.WriteLine("=== Parsing Complete! ===");

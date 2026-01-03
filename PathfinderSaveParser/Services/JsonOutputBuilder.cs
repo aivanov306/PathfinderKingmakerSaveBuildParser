@@ -77,8 +77,8 @@ public class JsonOutputBuilder
     {
         var json = new InventoryJson
         {
-            PersonalChest = BuildInventoryCollectionJson(ParseItemsFromCollection(personalChest)),
-            SharedInventory = BuildInventoryCollectionJson(ParseItemsFromParty(partyJson))
+            PersonalChest = BuildInventoryCollectionJson(ParseItemsFromCollectionWithEnchantments(personalChest)),
+            SharedInventory = BuildInventoryCollectionJson(ParseItemsFromPartyWithEnchantments(partyJson))
         };
 
         return json;
@@ -100,9 +100,40 @@ public class JsonOutputBuilder
         return items;
     }
 
-    private List<(string blueprint, int count)> ParseItemsFromParty(JToken? partyJson)
+    private List<(string blueprint, int count, List<string>? enchantments)> ParseItemsFromCollectionWithEnchantments(ItemCollection? collection)
     {
-        var items = new List<(string blueprint, int count)>();
+        var items = new List<(string blueprint, int count, List<string>? enchantments)>();
+        if (collection?.Items == null) return items;
+
+        foreach (var item in collection.Items)
+        {
+            if (item?.Blueprint != null)
+            {
+                var enchantments = new List<string>();
+                if (item.Enchantments?.Facts != null)
+                {
+                    foreach (var enchant in item.Enchantments.Facts)
+                    {
+                        if (!string.IsNullOrEmpty(enchant?.Blueprint))
+                        {
+                            var enchantName = _blueprintLookup.GetName(enchant.Blueprint);
+                            if (enchantName != enchant.Blueprint)
+                            {
+                                enchantments.Add(enchantName);
+                            }
+                        }
+                    }
+                }
+                items.Add((item.Blueprint, item.Count, enchantments.Any() ? enchantments : null));
+            }
+        }
+
+        return items;
+    }
+
+    private List<(string blueprint, int count, List<string>? enchantments)> ParseItemsFromPartyWithEnchantments(JToken? partyJson)
+    {
+        var items = new List<(string blueprint, int count, List<string>? enchantments)>();
         if (partyJson == null) return items;
 
         try
@@ -129,7 +160,26 @@ public class JsonOutputBuilder
 
                 if (!string.IsNullOrEmpty(blueprint))
                 {
-                    items.Add((blueprint, count));
+                    // Parse enchantments
+                    var enchantments = new List<string>();
+                    var enchantsArray = item["m_Enchantments"];
+                    if (enchantsArray != null && enchantsArray.Any())
+                    {
+                        foreach (var enchant in enchantsArray)
+                        {
+                            var enchantBlueprint = enchant?["m_Blueprint"]?.Value<string>();
+                            if (!string.IsNullOrEmpty(enchantBlueprint))
+                            {
+                                var enchantName = _blueprintLookup.GetName(enchantBlueprint);
+                                if (enchantName != enchantBlueprint)
+                                {
+                                    enchantments.Add(enchantName);
+                                }
+                            }
+                        }
+                    }
+
+                    items.Add((blueprint, count, enchantments.Any() ? enchantments : null));
                 }
             }
         }
@@ -141,7 +191,7 @@ public class JsonOutputBuilder
         return items;
     }
 
-    private InventoryCollectionJson BuildInventoryCollectionJson(List<(string blueprint, int count)> items)
+    private InventoryCollectionJson BuildInventoryCollectionJson(List<(string blueprint, int count, List<string>? enchantments)> items)
     {
         var collection = new InventoryCollectionJson
         {
@@ -152,7 +202,7 @@ public class JsonOutputBuilder
             Other = new List<InventoryItemJson>()
         };
 
-        foreach (var (blueprint, count) in items)
+        foreach (var (blueprint, count, enchantments) in items)
         {
             var name = _blueprintLookup.GetName(blueprint);
             if (name == blueprint) continue; // Skip unknown items
@@ -162,7 +212,8 @@ public class JsonOutputBuilder
             {
                 Name = name,
                 Type = type,
-                Count = count
+                Count = count,
+                Enchantments = enchantments
             };
 
             if (IsWeapon(type))
@@ -194,10 +245,10 @@ public class JsonOutputBuilder
             "Dagger", "Kukri", "Punching Dagger", "Sickle", "Starknife",
             "Battleaxe", "Handaxe", "Greataxe", "Warhammer", "Light Hammer",
             "Heavy Flail", "Light Flail", "Greatclub", "Club", "Heavy Mace", "Light Mace",
-            "Scimitar", "Falchion", "Rapier", "Estoc", "Sai",
+            "Scimitar", "Falchion", "Falcata", "Rapier", "Estoc", "Sai",
             "Glaive", "Scythe", "Bardiche", "Fauchard", "Nunchaku",
             "Light Pick", "Heavy Pick", "Kama", "Trident", "Sling Staff",
-            "Quarterstaff", "Spear", "Longspear", "Javelin",
+            "Quarterstaff", "Spear", "Longspear", "Javelin", "Earth Breaker",
             "Shortbow", "Longbow", "Light Crossbow", "Heavy Crossbow",
             "Dart", "Throwing Axe", "Sling",
             "Composite Shortbow", "Composite Longbow"
@@ -211,9 +262,11 @@ public class JsonOutputBuilder
         var armorTypes = new[]
         {
             "Light Armor", "Medium Armor", "Heavy Armor",
-            "Buckler", "Light Shield", "Heavy Shield", "Tower Shield"
+            "Buckler", "Light Shield", "Heavy Shield", "Tower Shield",
+            "Padded", "Leather", "Studded", "Chain Shirt", "Hide", "Scale Mail",
+            "Chainmail", "Breastplate", "Splint Mail", "Banded Mail", "Half-Plate", "Full Plate"
         };
-        return armorTypes.Any(at => type.Equals(at, StringComparison.OrdinalIgnoreCase));
+        return armorTypes.Any(at => type.Contains(at, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool IsAccessory(string name)

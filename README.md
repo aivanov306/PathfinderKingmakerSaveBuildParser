@@ -201,16 +201,23 @@ PathfinderKingmakerSaveBuildParser/
 │   ├── Services/
 │   │   ├── KingdomStatsParser.cs     # Kingdom statistics parser
 │   │   ├── CharacterParser.cs        # Character build parser with $ref resolution
-│   │   ├── EquipmentParser.cs        # Equipment and item parser   │   ├── SpellbookParser.cs        # Spellcasting information parser│   │   ├── SaveFileExtractor.cs      # .zks save file extraction service
+│   │   ├── EquipmentParser.cs        # Equipment and item parser
+│   │   ├── SpellbookParser.cs        # Spellcasting information parser
+│   │   ├── SaveFileExtractor.cs      # .zks save file extraction service
 │   │   ├── RefResolver.cs            # JSON $ref pointer resolver
 │   │   ├── BlueprintLookupService.cs # Blueprint GUID to name resolver
-│   │   └── SaveFileInspector.cs      # Save file metadata inspector
+│   │   ├── SaveFileInspector.cs      # Save file metadata inspector
+│   │   ├── TextFileGenerator.cs      # Text report file generation service
+│   │   └── JsonFileGenerator.cs      # JSON output file generation service
 │   ├── SavedGame/                     # Extracted save files location (auto-created)
 │   │   └── README.txt                 # Instructions for save file placement
 │   └── Output/                        # Generated reports (auto-created on build)
 │       ├── kingdom_stats.txt          # Kingdom statistics (text)
 │       ├── inventory.txt              # Inventory lists (text)
 │       ├── all_characters.txt         # Character builds (text)
+│       ├── explored_locations.txt     # Explored map locations (text)
+│       ├── settlements.txt            # Kingdom settlements and buildings (text)
+│       ├── CurrentState.txt           # Combined text file with all data
 │       ├── CurrentState.json          # Combined game state (JSON)
 │       ├── kingdom_stats.json         # Kingdom data (JSON)
 │       ├── inventory.json             # Inventory data (JSON)
@@ -280,15 +287,22 @@ The application generates the following reports in the `Output/` folder and disp
 1. **kingdom_stats.txt** - Kingdom statistics with values and ranks
 2. **inventory.txt** - Personal chest and shared party inventory
 3. **all_characters.txt** - Complete build analysis for all characters (main + companions)
+4. **explored_locations.txt** - All explored map locations
+5. **settlements.txt** - Kingdom settlements and buildings by region
+6. **CurrentState.txt** - Combined file containing all text data from the above files
 
 #### JSON Files (Structured data for programmatic access)
 1. **CurrentState.json** - Combined file containing all game state data:
    - Kingdom statistics and advisors
    - Personal chest and shared inventory
    - All character builds with attributes, classes, equipment, spells, and progression
+   - Explored map locations
+   - Kingdom settlements with buildings
 2. **kingdom_stats.json** - Kingdom data in JSON format
 3. **inventory.json** - Both inventories in JSON format with categorization
 4. **all_characters.json** - All character builds in JSON format
+5. **explored_locations.json** - All explored map locations in JSON format
+6. **settlements.json** - Kingdom settlements and buildings in JSON format
 
 The JSON files provide structured data suitable for external tools, data analysis, or integration with other applications.
 
@@ -495,6 +509,8 @@ The application is designed to be maintainable and extensible:
   - `SaveFileExtractor`: Automatically extracts `.zks` archives and locates save files
   - `BlueprintLookupService`: Resolves GUIDs to human-readable names
   - `SaveFileInspector`: Provides file metadata
+  - `TextFileGenerator`: Generates all text report files (kingdom_stats.txt, all_characters.txt, inventory.txt, settlements.txt, explored_locations.txt, CurrentState.txt)
+  - `JsonFileGenerator`: Generates all JSON output files (kingdom_stats.json, all_characters.json, inventory.json, settlements.json, explored_locations.json, CurrentState.json)
 - **Program**: Entry point and orchestration with three-tier automatic save file loading
 
 ### Key Features

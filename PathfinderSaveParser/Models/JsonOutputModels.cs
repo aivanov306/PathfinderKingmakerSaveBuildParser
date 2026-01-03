@@ -78,6 +78,7 @@ public class InventoryItemJson
     public string? Name { get; set; }
     public string? Type { get; set; }
     public int Count { get; set; }
+    public List<string>? Enchantments { get; set; }
 }
 
 /// <summary>

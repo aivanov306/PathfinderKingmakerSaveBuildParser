@@ -132,20 +132,22 @@ TEXT FILES (Human-readable reports):
 - kingdom_stats.txt - Kingdom statistics, gold, BP, and advisor assignments
 - inventory.txt - Personal chest and shared party inventory (excludes equipped items)
 - all_characters.txt - Complete character builds with equipment
+- explored_locations.txt - All explored map locations
+- settlements.txt - Kingdom settlements and buildings by region
+- CurrentState.txt - Combined file with all text data from above files
 
 JSON FILES (Structured data for programmatic access):
-- CurrentState.json - Combined file with all data (kingdom, inventory, characters, locations, settlements)
-  We can find information:
+- CurrentState.json - Combined file with all game state data:
   * Kingdom statistics and advisors
   * Personal chest and shared inventory
   * All characters with full builds
   * Explored map locations
   * Kingdom settlements with development levels
 - kingdom_stats.json - Kingdom statistics in JSON format
-- inventory.json - Both inventories in JSON format
+- inventory.json - Both inventories in JSON format with categorization
 - all_characters.json - All character builds in JSON format
-- explored_locations.json - List of all explored map locations
-- settlements.json - Kingdom settlements with Level, Name, and finished buildings by region
+- explored_locations.json - All explored map locations in JSON format
+- settlements.json - Kingdom settlements with buildings by region in JSON format
 
 All text output is also displayed in the console.
 
