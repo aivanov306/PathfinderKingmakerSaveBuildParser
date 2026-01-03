@@ -29,6 +29,7 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 
 ### Kingdom Statistics
 - **Kingdom Name & Alignment**: Basic kingdom information
+- **Game Time & Days**: In-game time elapsed (format: "days.hours:minutes:seconds") and calculated day count
 - **Gold**: Current party gold amount
 - **Build Points**: Current BP and per-turn generation
 
@@ -56,6 +57,26 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
     - Grand Diplomat (Community), Warden (Military), Magister (Arcane)
     - Curator (Loyalty), Minister (Relations)
 
+### Settlements & Artisans
+- **Settlement Information**: All kingdom settlements with detailed status
+  - Settlement name, region, and development level (Village, Town, City)
+  - Claimed/Unclaimed status
+  - Complete list of finished buildings
+  - Building counts per settlement
+- **Artisan Details** (for claimed settlements only):
+  - Artisan name and type
+  - Building unlock status (Yes/No)
+  - Tiers unlocked out of 6 maximum
+  - Help project events (if active)
+  - Production timeline (start day and end day)
+  - **Current Production**: Items currently being crafted
+    - Item name with equipment type in brackets [Type]
+    - Enchantments (when available)
+  - **Previous Items**: Complete history of crafted items
+    - Item name with equipment type in brackets [Type]
+    - Enchantments (when available)
+  - Items sorted and categorized for easy tracking
+
 ### JSON Export
 - **CurrentState.json**: Combined file with complete game state
 
@@ -67,11 +88,14 @@ We can find information:
 - Kingdom settlements with development levels
 
 Detailed structure:
-  - Kingdom: Name, alignment, gold, build points, unrest, stats (with ranks), advisor assignments
+  - Kingdom: Name, alignment, game time, days, gold, build points, unrest, stats (with ranks), advisor assignments
   - Inventory: Personal chest and shared inventory, categorized by type (weapons, armor, accessories, usables, other)
   - Characters: Full character data including name, race, classes, attributes, equipment, spellbooks, level progression
   - ExploredLocations: List of all explored map locations
-  - Settlements: List of all settlements with Level, Name, and finished buildings
+  - Settlements: All settlements with level, name, claimed status, finished buildings, and artisan details:
+    - Artisan information includes building unlock status, tiers unlocked (count/6), help project events
+    - Current production and previous items with full details (name, type, enchantments)
+    - Production timeline (start day and end day)
 - **Separate JSON files**: Individual files for kingdom, inventory, characters, explored locations, and settlements
 - **Structured format**: Properly formatted JSON with indentation for readability
 - **Type information**: Equipment includes type data (weapon types, armor types)

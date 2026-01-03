@@ -19,6 +19,8 @@ public class KingdomStatsJson
 {
     public string? Name { get; set; }
     public string? Alignment { get; set; }
+    public string? GameTime { get; set; }
+    public int Days { get; set; }
     public int Gold { get; set; }
     public int BuildPoints { get; set; }
     public int BuildPointsPerTurn { get; set; }
@@ -195,5 +197,32 @@ public class SettlementJson
     public string? RegionName { get; set; }
     public string? SettlementName { get; set; }
     public string? Level { get; set; }
+    public bool IsClaimed { get; set; }
     public List<string>? Buildings { get; set; }
+    public List<ArtisanJson>? Artisans { get; set; }
+}
+
+/// <summary>
+/// Artisan information
+/// </summary>
+public class ArtisanJson
+{
+    public string? Name { get; set; }
+    public int ProductionStartedOn { get; set; }
+    public int ProductionEndsOn { get; set; }
+    public bool BuildingUnlocked { get; set; }
+    public int TiersUnlocked { get; set; }
+    public string? HelpProjectEvent { get; set; }
+    public List<ArtisanItemJson>? PreviousItems { get; set; }
+    public List<ArtisanItemJson>? CurrentProduction { get; set; }
+}
+
+/// <summary>
+/// Artisan item with type and enchantments
+/// </summary>
+public class ArtisanItemJson
+{
+    public string? Name { get; set; }
+    public string? Type { get; set; }
+    public List<string>? Enchantments { get; set; }
 }

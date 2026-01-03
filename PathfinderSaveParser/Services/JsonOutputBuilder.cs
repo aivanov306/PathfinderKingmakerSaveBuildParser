@@ -19,14 +19,27 @@ public class JsonOutputBuilder
         _options = options ?? new ReportOptions();
     }
 
-    public KingdomStatsJson? BuildKingdomJson(Kingdom? kingdom, int money)
+    public KingdomStatsJson? BuildKingdomJson(Kingdom? kingdom, int money, string? gameTime)
     {
         if (kingdom == null) return null;
+
+        // Calculate days from game time (format: "days.hours:minutes:seconds")
+        int days = 0;
+        if (!string.IsNullOrEmpty(gameTime))
+        {
+            var parts = gameTime.Split('.');
+            if (parts.Length > 0 && int.TryParse(parts[0], out int parsedDays))
+            {
+                days = parsedDays;
+            }
+        }
 
         var json = new KingdomStatsJson
         {
             Name = kingdom.KingdomName,
             Alignment = kingdom.Alignment,
+            GameTime = gameTime,
+            Days = days,
             Gold = money,
             BuildPoints = kingdom.BuildPoints,
             BuildPointsPerTurn = kingdom.BuildPointsPerTurn,
@@ -369,7 +382,9 @@ public class JsonOutputBuilder
                     RegionName = regionName,
                     SettlementName = region.Settlement.Name,
                     Level = region.Settlement.Level,
-                    Buildings = buildings.OrderBy(b => b).ToList()
+                    IsClaimed = region.IsClaimed,
+                    Buildings = buildings.OrderBy(b => b).ToList(),
+                    Artisans = region.IsClaimed ? BuildArtisansJson(region.Artisans) : null
                 });
             }
         }
@@ -894,5 +909,84 @@ public class JsonOutputBuilder
         }
 
         return levelProgression.Any() ? levelProgression : null;
+    }
+
+    private List<ArtisanJson>? BuildArtisansJson(List<Artisan>? artisans)
+    {
+        if (artisans == null || artisans.Count == 0) return null;
+
+        var result = new List<ArtisanJson>();
+        foreach (var artisan in artisans)
+        {
+            if (string.IsNullOrEmpty(artisan.Blueprint)) continue;
+
+            var artisanName = _blueprintLookup.GetName(artisan.Blueprint);
+            if (string.IsNullOrEmpty(artisanName) || artisanName == artisan.Blueprint) continue;
+
+            // Build previous items with type and enchantments
+            var previousItems = new List<ArtisanItemJson>();
+            if (artisan.PreviousItems != null)
+            {
+                foreach (var itemBlueprint in artisan.PreviousItems)
+                {
+                    var item = BuildArtisanItem(itemBlueprint);
+                    if (item != null) previousItems.Add(item);
+                }
+            }
+
+            // Build current production with type and enchantments
+            var currentProduction = new List<ArtisanItemJson>();
+            if (artisan.CurrentProduction != null)
+            {
+                foreach (var itemBlueprint in artisan.CurrentProduction)
+                {
+                    var item = BuildArtisanItem(itemBlueprint);
+                    if (item != null) currentProduction.Add(item);
+                }
+            }
+
+            // Count unlocked tiers
+            int tiersUnlocked = artisan.TiersUnlocked?.Count(t => t) ?? 0;
+
+            // Get help project event name if exists
+            string? helpProjectEvent = null;
+            if (!string.IsNullOrEmpty(artisan.HelpProjectEvent))
+            {
+                helpProjectEvent = _blueprintLookup.GetName(artisan.HelpProjectEvent);
+                if (helpProjectEvent == artisan.HelpProjectEvent)
+                    helpProjectEvent = null; // Don't show if name wasn't resolved
+            }
+
+            result.Add(new ArtisanJson
+            {
+                Name = artisanName,
+                ProductionStartedOn = artisan.ProductionStartedOn,
+                ProductionEndsOn = artisan.ProductionEndsOn,
+                BuildingUnlocked = artisan.BuildingUnlocked,
+                TiersUnlocked = tiersUnlocked,
+                HelpProjectEvent = helpProjectEvent,
+                PreviousItems = previousItems.Count > 0 ? previousItems : null,
+                CurrentProduction = currentProduction.Count > 0 ? currentProduction : null
+            });
+        }
+
+        return result.Count > 0 ? result : null;
+    }
+
+    private ArtisanItemJson? BuildArtisanItem(string itemBlueprint)
+    {
+        if (string.IsNullOrEmpty(itemBlueprint)) return null;
+
+        var itemName = _blueprintLookup.GetName(itemBlueprint);
+        if (string.IsNullOrEmpty(itemName) || itemName == itemBlueprint) return null;
+
+        var itemType = _blueprintLookup.GetEquipmentType(itemBlueprint);
+
+        return new ArtisanItemJson
+        {
+            Name = itemName,
+            Type = itemType,
+            Enchantments = null // Artisan items are blueprints, not instances, so no enchantment data
+        };
     }
 }

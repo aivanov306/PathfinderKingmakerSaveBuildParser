@@ -342,7 +342,7 @@ class Program
             var currentState = new CurrentStateJson
             {
                 Kingdom = (reportOptions.IncludeKingdomStats && playerSave.Kingdom != null) 
-                    ? jsonBuilder.BuildKingdomJson(playerSave.Kingdom, playerSave.Money) 
+                    ? jsonBuilder.BuildKingdomJson(playerSave.Kingdom, playerSave.Money, playerSave.GameTime) 
                     : null,
                 Inventory = reportOptions.IncludeInventory 
                     ? jsonBuilder.BuildInventoryJson(playerSave.SharedStash, partyJson) 

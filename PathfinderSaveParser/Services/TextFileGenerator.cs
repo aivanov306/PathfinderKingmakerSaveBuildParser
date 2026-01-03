@@ -31,6 +31,8 @@ public class TextFileGenerator
         sb.AppendLine();
         sb.AppendLine($"Kingdom Name: {kingdom.Name}");
         sb.AppendLine($"Alignment: {kingdom.Alignment}");
+        sb.AppendLine($"Game Time: {kingdom.GameTime}");
+        sb.AppendLine($"Days: {kingdom.Days}");
         sb.AppendLine($"Gold: {kingdom.Gold:N0}");
         sb.AppendLine($"Build Points: {kingdom.BuildPoints}");
         sb.AppendLine($"Build Points Per Turn: {kingdom.BuildPointsPerTurn}");
@@ -235,6 +237,7 @@ public class TextFileGenerator
             sb.AppendLine($"Settlement: {settlement.SettlementName}");
             sb.AppendLine($"  Region: {settlement.RegionName}");
             sb.AppendLine($"  Level: {settlement.Level}");
+            sb.AppendLine($"  Status: {(settlement.IsClaimed ? "Claimed" : "Unclaimed")}");
             
             if (settlement.Buildings != null && settlement.Buildings.Any())
             {
@@ -244,6 +247,54 @@ public class TextFileGenerator
                     sb.AppendLine($"    • {building}");
                 }
             }
+
+            if (settlement.IsClaimed && settlement.Artisans != null && settlement.Artisans.Any())
+            {
+                sb.AppendLine($"  Artisans ({settlement.Artisans.Count}):");
+                foreach (var artisan in settlement.Artisans)
+                {
+                    sb.AppendLine($"    • {artisan.Name}");
+                    sb.AppendLine($"      Building Unlocked: {(artisan.BuildingUnlocked ? "Yes" : "No")}");
+                    sb.AppendLine($"      Tiers Unlocked: {artisan.TiersUnlocked}/6");
+                    
+                    if (!string.IsNullOrEmpty(artisan.HelpProjectEvent))
+                    {
+                        sb.AppendLine($"      Help Project: {artisan.HelpProjectEvent}");
+                    }
+                    
+                    sb.AppendLine($"      Production Started On: Day {artisan.ProductionStartedOn}");
+                    sb.AppendLine($"      Production Ends On: Day {artisan.ProductionEndsOn}");
+                    
+                    if (artisan.CurrentProduction != null && artisan.CurrentProduction.Any())
+                    {
+                        sb.AppendLine($"      Current Production:");
+                        foreach (var item in artisan.CurrentProduction)
+                        {
+                            var itemLine = $"        - {item.Name}";
+                            if (!string.IsNullOrEmpty(item.Type))
+                                itemLine += $" [{item.Type}]";
+                            if (item.Enchantments != null && item.Enchantments.Any())
+                                itemLine += $" ({string.Join(", ", item.Enchantments)})";
+                            sb.AppendLine(itemLine);
+                        }
+                    }
+                    
+                    if (artisan.PreviousItems != null && artisan.PreviousItems.Any())
+                    {
+                        sb.AppendLine($"      Previous Items:");
+                        foreach (var item in artisan.PreviousItems)
+                        {
+                            var itemLine = $"        - {item.Name}";
+                            if (!string.IsNullOrEmpty(item.Type))
+                                itemLine += $" [{item.Type}]";
+                            if (item.Enchantments != null && item.Enchantments.Any())
+                                itemLine += $" ({string.Join(", ", item.Enchantments)})";
+                            sb.AppendLine(itemLine);
+                        }
+                    }
+                }
+            }
+            
             sb.AppendLine();
         }
 

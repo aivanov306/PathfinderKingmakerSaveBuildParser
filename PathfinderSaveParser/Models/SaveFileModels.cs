@@ -4,6 +4,9 @@ namespace PathfinderSaveParser.Models;
 
 public class PlayerSaveFile
 {
+    [JsonProperty("GameTime")]
+    public string? GameTime { get; set; }
+
     [JsonProperty("Kingdom")]
     public Kingdom? Kingdom { get; set; }
 
@@ -168,6 +171,9 @@ public class KingdomRegion
 
     [JsonProperty("IsClaimed")]
     public bool IsClaimed { get; set; }
+
+    [JsonProperty("Artisans")]
+    public List<Artisan>? Artisans { get; set; }
 }
 
 public class Settlement
@@ -191,4 +197,31 @@ public class SettlementBuilding
 
     [JsonProperty("IsFinished")]
     public bool IsFinished { get; set; }
+}
+
+public class Artisan
+{
+    [JsonProperty("Blueprint")]
+    public string? Blueprint { get; set; }
+
+    [JsonProperty("ProductionStartedOn")]
+    public int ProductionStartedOn { get; set; }
+
+    [JsonProperty("ProductionEndsOn")]
+    public int ProductionEndsOn { get; set; }
+
+    [JsonProperty("m_PreviousItems")]
+    public List<string>? PreviousItems { get; set; }
+
+    [JsonProperty("CurrentProduction")]
+    public List<string>? CurrentProduction { get; set; }
+
+    [JsonProperty("BuildingUnlocked")]
+    public bool BuildingUnlocked { get; set; }
+
+    [JsonProperty("TiersUnlocked")]
+    public List<bool>? TiersUnlocked { get; set; }
+
+    [JsonProperty("m_HelpProjectEvent")]
+    public string? HelpProjectEvent { get; set; }
 }
