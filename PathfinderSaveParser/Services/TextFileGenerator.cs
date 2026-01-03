@@ -56,7 +56,7 @@ public class TextFileGenerator
             {
                 var assignedTo = !string.IsNullOrEmpty(advisor.Advisor)
                     ? advisor.Advisor
-                    : "Unassigned";
+                    : advisor.Status == "Locked" ? "Locked" : "Unassigned";
                 sb.AppendLine($"  {advisor.Position,-20} {assignedTo}");
             }
         }
