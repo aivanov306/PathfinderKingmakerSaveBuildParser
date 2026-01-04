@@ -149,6 +149,9 @@ public class JsonOutputBuilder
         var items = new List<(string blueprint, int count, List<string>? enchantments)>();
         if (partyJson == null) return items;
 
+        int totalItems = 0;
+        int sharedItems = 0;
+        int failedItems = 0;
         try
         {
             var entityData = partyJson["m_EntityData"];
@@ -161,39 +164,68 @@ public class JsonOutputBuilder
 
             if (itemsArray == null || !itemsArray.Any()) return items;
 
+            totalItems = itemsArray.Count();
             foreach (var item in itemsArray)
             {
-                if (item == null || item.Type == JTokenType.Null) continue;
-
-                var slotIndex = item["m_InventorySlotIndex"]?.Value<int>();
-                if (slotIndex == null || slotIndex < 0) continue;
-
-                var blueprint = item["m_Blueprint"]?.Value<string>();
-                var count = item["m_Count"]?.Value<int>() ?? 1;
-
-                if (!string.IsNullOrEmpty(blueprint))
+                try
                 {
-                    // Parse enchantments
-                    var enchantments = new List<string>();
-                    var enchantsArray = item["m_Enchantments"];
-                    if (enchantsArray != null && enchantsArray.Any())
+                    if (item == null || item.Type == JTokenType.Null) continue;
+
+                    var slotIndex = item["m_InventorySlotIndex"]?.Value<int>();
+                    if (slotIndex == null || slotIndex < 0) continue;
+                    
+                    sharedItems++;
+
+                    var blueprint = item["m_Blueprint"]?.Value<string>();
+                    var count = item["m_Count"]?.Value<int>() ?? 1;
+
+                    if (!string.IsNullOrEmpty(blueprint))
                     {
-                        foreach (var enchant in enchantsArray)
+                        // Parse enchantments
+                        var enchantments = new List<string>();
+                        try
                         {
-                            var enchantBlueprint = enchant?["m_Blueprint"]?.Value<string>();
-                            if (!string.IsNullOrEmpty(enchantBlueprint))
+                            var enchantsToken = item["m_Enchantments"];
+                            if (enchantsToken != null)
                             {
-                                var enchantName = _blueprintLookup.GetName(enchantBlueprint);
-                                if (enchantName != enchantBlueprint)
+                                // Handle case where m_Enchantments might be nested (e.g., m_Enchantments -> m_Enchantments)
+                                var enchantsArray = enchantsToken is JArray ? enchantsToken : enchantsToken["m_Enchantments"];
+                                
+                                if (enchantsArray != null && enchantsArray is JArray arr && arr.Any())
                                 {
-                                    enchantments.Add(enchantName);
+                                    foreach (var enchant in arr)
+                                    {
+                                        var enchantBlueprint = enchant?["m_Blueprint"]?.Value<string>();
+                                        if (!string.IsNullOrEmpty(enchantBlueprint))
+                                        {
+                                            var enchantName = _blueprintLookup.GetName(enchantBlueprint);
+                                            if (enchantName != enchantBlueprint)
+                                            {
+                                                enchantments.Add(enchantName);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
+                        catch
+                        {
+                            // Ignore enchantment parsing errors
+                        }
 
-                    items.Add((blueprint, count, enchantments.Any() ? enchantments : null));
+                        items.Add((blueprint, count, enchantments.Any() ? enchantments : null));
+                    }
                 }
+                catch
+                {
+                    failedItems++;
+                    // Skip items that fail to parse
+                }
+            }
+            
+            if (failedItems > 0)
+            {
+                Console.WriteLine($"Warning: Failed to parse {failedItems} shared inventory items (out of {sharedItems} shared items from {totalItems} total)");
             }
         }
         catch
@@ -215,10 +247,15 @@ public class JsonOutputBuilder
             Other = new List<InventoryItemJson>()
         };
 
+        int skippedCount = 0;
         foreach (var (blueprint, count, enchantments) in items)
         {
             var name = _blueprintLookup.GetName(blueprint);
-            if (name == blueprint) continue; // Skip unknown items
+            if (name == blueprint)
+            {
+                skippedCount++;
+                continue; // Skip unknown items
+            }
 
             var type = _blueprintLookup.GetEquipmentType(blueprint);
             var item = new InventoryItemJson
@@ -245,6 +282,11 @@ public class JsonOutputBuilder
         collection.UniqueItems = collection.Weapons!.Count + collection.Armor!.Count +
                                 collection.Accessories!.Count + collection.Usables!.Count +
                                 collection.Other!.Count;
+
+        if (skippedCount > 0)
+        {
+            Console.WriteLine($"Warning: Skipped {skippedCount} items with unknown blueprints (not in database)");
+        }
 
         return collection;
     }
