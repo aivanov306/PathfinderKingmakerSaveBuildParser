@@ -144,8 +144,13 @@ public class SkillsJson
 /// </summary>
 public class EquipmentJson
 {
+    public List<WeaponSetJson>? WeaponSets { get; set; }
+    public int ActiveWeaponSetIndex { get; set; }
+    
+    // Legacy properties for backward compatibility (active set only)
     public EquipmentSlotJson? MainHand { get; set; }
     public EquipmentSlotJson? OffHand { get; set; }
+    
     public EquipmentSlotJson? Body { get; set; }
     public EquipmentSlotJson? Head { get; set; }
     public EquipmentSlotJson? Neck { get; set; }
@@ -157,6 +162,16 @@ public class EquipmentJson
     public EquipmentSlotJson? Gloves { get; set; }
     public EquipmentSlotJson? Boots { get; set; }
     public List<EquipmentSlotJson>? QuickSlots { get; set; }
+}
+
+/// <summary>
+/// Weapon set (main hand + off hand)
+/// </summary>
+public class WeaponSetJson
+{
+    public int SetNumber { get; set; }
+    public EquipmentSlotJson? MainHand { get; set; }
+    public EquipmentSlotJson? OffHand { get; set; }
 }
 
 /// <summary>

@@ -86,7 +86,7 @@ Control what information appears in generated reports:
   "IncludeKingdomAdvisors": true,    // Kingdom advisor assignments
   "IncludeInventory": true,          // Personal chest inventory
   "IncludeUnclaimedSettlements": false, // Include unclaimed regions in settlements
-  "IncludeActiveWeaponSet": true,    // Current weapon set
+  "IncludeActiveWeaponSet": true,    // All 4 weapon sets with active indicator
   "IncludeArmor": true,              // Equipped armor
   "IncludeAccessories": true,        // Rings, belts, etc.
   "ShowEmptySlots": true,            // Display empty equipment slots
@@ -165,7 +165,8 @@ All text output is also displayed in the console.
 ✓ Character builds (race, classes, abilities)
 ✓ Character skills (all 11 skills with modifiers)
 ✓ Level-by-level feat and feature progression
-✓ Equipment with enchantments (weapons, armor, accessories)
+✓ Equipment with enchantments (all 4 weapon sets, armor, accessories)
+✓ Active weapon set indicator (shows which set is currently equipped)
 ✓ Quick slots (potions, scrolls, wands, rods)
 ✓ Spellcasting information (spell slots per day and known spells)
 ✓ Kingdom statistics (all 10 stats with ranks, game time, days elapsed)

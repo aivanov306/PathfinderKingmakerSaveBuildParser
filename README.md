@@ -14,7 +14,8 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
   - Lore (Nature), Lore (Religion)
   - Perception, Persuasion, Use Magic Device
 - **Equipment**: Shows equipped weapons, armor, and accessories with enchantments
-  - Active weapon set (main hand and off-hand)
+  - All 4 weapon sets displayed (main hand and off-hand for each set)
+  - Active weapon set clearly marked with "(Active)" indicator
   - All armor and accessory slots (body, head, neck, belt, cloak, rings, bracers, gloves, boots)
   - Quick slots (potions, scrolls, wands, rods) with slot numbers
   - Equipment types displayed in brackets (e.g., [Greatsword], [Fullplate], [Tower Shield])
@@ -248,6 +249,17 @@ PathfinderKingmakerSaveBuildParser/
 │       ├── explored_locations.txt     # Explored map locations (text)
 │       ├── settlements.txt            # Kingdom settlements and buildings (text)
 │       ├── CurrentState.txt           # Combined text file with all data
+├── PathfinderSaveParser.Tests/
+│   ├── PathfinderSaveParser.Tests.csproj  # Test project file
+│   ├── README.md                      # Test documentation
+│   ├── Models/
+│   │   └── JsonOutputModelsTests.cs   # Model structure tests
+│   ├── Services/
+│   │   ├── JsonOutputBuilderEnchantmentTests.cs  # Enchantment parsing tests
+│   │   ├── TextFileGeneratorTests.cs  # Text output formatting tests
+│   │   └── BlueprintLookupTests.cs    # Blueprint service tests
+│   └── Integration/
+│       └── CompleteWorkflowTests.cs   # End-to-end workflow tests
 │       ├── CurrentState.json          # Combined game state (JSON)
 │       ├── kingdom_stats.json         # Kingdom data (JSON)
 │       ├── inventory.json             # Inventory data (JSON)
@@ -407,9 +419,21 @@ Class - Fighter Class 9 (Tower Shield Specialist Archetype), Rogue Class 1 (Thug
 EQUIPMENT
 ================================================================================
 
-Active Weapon Set (Set 1):
+Weapon Set 1 (Active):
   Main Hand:  Scepter Of Woe [Heavy Mace] (Enhancement 3, Scepter Immunity)
   Off Hand:   Tower Shield [Tower Shield]
+
+Weapon Set 2:
+  Main Hand:  (empty)
+  Off Hand:   (empty)
+
+Weapon Set 3:
+  Main Hand:  (empty)
+  Off Hand:   (empty)
+
+Weapon Set 4:
+  Main Hand:  (empty)
+  Off Hand:   (empty)
 
 Armor & Accessories:
   Body      : Fullplate Standart Plus 2 [Fullplate] (Armor Enhancement Bonus 2)
@@ -571,6 +595,32 @@ To extend this parser:
 3. Create parsers in `Services/`
 4. Update `Program.cs` to call new parsers
 5. Use `BlueprintBuilder` to regenerate the database if needed
+
+### Running Tests
+
+The project includes comprehensive unit tests covering models, services, and integration scenarios:
+
+```bash
+# Run all tests
+dotnet test
+
+# Run with detailed output
+dotnet test --logger "console;verbosity=normal"
+
+# Run specific test class
+dotnet test --filter "FullyQualifiedName~JsonOutputBuilderEnchantmentTests"
+
+# Run with code coverage
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+**Test Coverage**: 37 tests across 4 test suites
+- Model structure tests (JSON output data models)
+- Enchantment parsing tests (validates bug fixes)
+- Text formatting tests (output generation)
+- Integration tests (complete workflows)
+
+See [PathfinderSaveParser.Tests/README.md](PathfinderSaveParser.Tests/README.md) for detailed test documentation.
 
 ### Blueprint Database Generation
 The `BlueprintBuilder` utility processes the official game blueprint dump:

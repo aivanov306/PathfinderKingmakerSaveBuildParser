@@ -680,20 +680,48 @@ public class JsonOutputBuilder
 
         var equipment = new EquipmentJson();
 
-        // Parse active weapon set
+        // Parse all weapon sets
         var sets = body["m_HandsEquipmentSets"];
         var activeIndex = body["m_CurrentHandsEquipmentSetIndex"]?.Value<int>() ?? 0;
+        equipment.ActiveWeaponSetIndex = activeIndex;
         
-        if (sets != null && sets.HasValues && sets.Count() > activeIndex)
+        if (sets != null && sets.HasValues)
         {
-            var activeSet = sets.ElementAtOrDefault(activeIndex);
-            if (activeSet is JObject)
+            var weaponSets = new List<WeaponSetJson>();
+            for (int i = 0; i < sets.Count(); i++)
             {
-                var primaryRef = activeSet["PrimaryHand"];
-                equipment.MainHand = ParseEquipmentSlotJson(primaryRef);
-                
-                var secondaryRef = activeSet["SecondaryHand"];
-                equipment.OffHand = ParseEquipmentSlotJson(secondaryRef);
+                var set = sets.ElementAtOrDefault(i);
+                if (set is JObject)
+                {
+                    var primaryRef = set["PrimaryHand"];
+                    var secondaryRef = set["SecondaryHand"];
+                    
+                    var mainHand = ParseEquipmentSlotJson(primaryRef);
+                    var offHand = ParseEquipmentSlotJson(secondaryRef);
+                    
+                    // Only add non-empty weapon sets
+                    if (mainHand != null || offHand != null)
+                    {
+                        weaponSets.Add(new WeaponSetJson
+                        {
+                            SetNumber = i + 1,
+                            MainHand = mainHand,
+                            OffHand = offHand
+                        });
+                    }
+                    
+                    // Keep legacy properties for backward compatibility (active set only)
+                    if (i == activeIndex)
+                    {
+                        equipment.MainHand = mainHand;
+                        equipment.OffHand = offHand;
+                    }
+                }
+            }
+            
+            if (weaponSets.Any())
+            {
+                equipment.WeaponSets = weaponSets;
             }
         }
 

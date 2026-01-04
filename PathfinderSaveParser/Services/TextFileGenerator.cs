@@ -137,30 +137,57 @@ public class TextFileGenerator
             {
                 sb.AppendLine("Equipment:");
                 
-                if (character.Equipment.MainHand?.Name != null)
-                    sb.AppendLine($"  Main Hand:   {FormatEquipmentSlot(character.Equipment.MainHand)}");
-                if (character.Equipment.OffHand?.Name != null)
-                    sb.AppendLine($"  Off Hand:    {FormatEquipmentSlot(character.Equipment.OffHand)}");
+                // Display all weapon sets
+                if (character.Equipment.WeaponSets != null && character.Equipment.WeaponSets.Any())
+                {
+                    foreach (var weaponSet in character.Equipment.WeaponSets)
+                    {
+                        var activeMarker = weaponSet.SetNumber == character.Equipment.ActiveWeaponSetIndex + 1 ? " (Active)" : "";
+                        sb.AppendLine($"  Weapon Set {weaponSet.SetNumber}{activeMarker}:");
+                        
+                        if (weaponSet.MainHand?.Name != null)
+                            sb.AppendLine($"    Main Hand: {FormatEquipmentSlot(weaponSet.MainHand)}");
+                        else
+                            sb.AppendLine($"    Main Hand: (empty)");
+                            
+                        if (weaponSet.OffHand?.Name != null)
+                            sb.AppendLine($"    Off Hand:  {FormatEquipmentSlot(weaponSet.OffHand)}");
+                        else
+                            sb.AppendLine($"    Off Hand:  (empty)");
+                        
+                        sb.AppendLine();
+                    }
+                }
+                else
+                {
+                    // Fallback to legacy format if no weapon sets
+                    if (character.Equipment.MainHand?.Name != null)
+                        sb.AppendLine($"  Main Hand:   {FormatEquipmentSlot(character.Equipment.MainHand)}");
+                    if (character.Equipment.OffHand?.Name != null)
+                        sb.AppendLine($"  Off Hand:    {FormatEquipmentSlot(character.Equipment.OffHand)}");
+                }
+                
+                sb.AppendLine("  Armor & Accessories:");
                 if (character.Equipment.Head?.Name != null)
-                    sb.AppendLine($"  Head:        {FormatEquipmentSlot(character.Equipment.Head)}");
+                    sb.AppendLine($"    Head:      {FormatEquipmentSlot(character.Equipment.Head)}");
                 if (character.Equipment.Neck?.Name != null)
-                    sb.AppendLine($"  Neck:        {FormatEquipmentSlot(character.Equipment.Neck)}");
+                    sb.AppendLine($"    Neck:      {FormatEquipmentSlot(character.Equipment.Neck)}");
                 if (character.Equipment.Body?.Name != null)
-                    sb.AppendLine($"  Body:        {FormatEquipmentSlot(character.Equipment.Body)}");
+                    sb.AppendLine($"    Body:      {FormatEquipmentSlot(character.Equipment.Body)}");
                 if (character.Equipment.Belt?.Name != null)
-                    sb.AppendLine($"  Belt:        {FormatEquipmentSlot(character.Equipment.Belt)}");
+                    sb.AppendLine($"    Belt:      {FormatEquipmentSlot(character.Equipment.Belt)}");
                 if (character.Equipment.Gloves?.Name != null)
-                    sb.AppendLine($"  Gloves:      {FormatEquipmentSlot(character.Equipment.Gloves)}");
+                    sb.AppendLine($"    Gloves:    {FormatEquipmentSlot(character.Equipment.Gloves)}");
                 if (character.Equipment.Boots?.Name != null)
-                    sb.AppendLine($"  Boots:       {FormatEquipmentSlot(character.Equipment.Boots)}");
+                    sb.AppendLine($"    Boots:     {FormatEquipmentSlot(character.Equipment.Boots)}");
                 if (character.Equipment.Ring1?.Name != null)
-                    sb.AppendLine($"  Ring 1:      {FormatEquipmentSlot(character.Equipment.Ring1)}");
+                    sb.AppendLine($"    Ring 1:    {FormatEquipmentSlot(character.Equipment.Ring1)}");
                 if (character.Equipment.Ring2?.Name != null)
-                    sb.AppendLine($"  Ring 2:      {FormatEquipmentSlot(character.Equipment.Ring2)}");
+                    sb.AppendLine($"    Ring 2:    {FormatEquipmentSlot(character.Equipment.Ring2)}");
                 if (character.Equipment.Cloak?.Name != null)
-                    sb.AppendLine($"  Cloak:       {FormatEquipmentSlot(character.Equipment.Cloak)}");
+                    sb.AppendLine($"    Cloak:     {FormatEquipmentSlot(character.Equipment.Cloak)}");
                 if (character.Equipment.Bracers?.Name != null)
-                    sb.AppendLine($"  Bracers:     {FormatEquipmentSlot(character.Equipment.Bracers)}");
+                    sb.AppendLine($"    Bracers:   {FormatEquipmentSlot(character.Equipment.Bracers)}");
                 
                 if (character.Equipment.QuickSlots != null && character.Equipment.QuickSlots.Any())
                 {
