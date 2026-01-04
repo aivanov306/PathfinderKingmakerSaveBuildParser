@@ -257,4 +257,88 @@ public class CompleteWorkflowTests
         Assert.Equal(2, equipment.ActiveWeaponSetIndex);
         Assert.Equal(3, newActive.SetNumber);
     }
+
+    [Fact]
+    public void SharedInventory_WithEnchantedWeapon_ShouldParseEnchantments()
+    {
+        // Arrange - Simulates Gift Of Death with 3 enchantments from party.json
+        var inventory = new InventoryJson
+        {
+            SharedInventory = new InventoryCollectionJson
+            {
+                Weapons = new List<InventoryItemJson>
+                {
+                    new InventoryItemJson
+                    {
+                        Name = "Gift Of Death",
+                        Type = "Kukri",
+                        Count = 1,
+                        Enchantments = new List<string>
+                        {
+                            "Enhancement 2",
+                            "Unholy",
+                            "Against Helpless Plus 2"
+                        }
+                    }
+                }
+            }
+        };
+
+        // Act
+        var giftOfDeath = inventory.SharedInventory?.Weapons?.FirstOrDefault();
+
+        // Assert
+        Assert.NotNull(giftOfDeath);
+        Assert.Equal("Gift Of Death", giftOfDeath.Name);
+        Assert.Equal("Kukri", giftOfDeath.Type);
+        Assert.NotNull(giftOfDeath.Enchantments);
+        Assert.Equal(3, giftOfDeath.Enchantments.Count);
+        Assert.Contains("Enhancement 2", giftOfDeath.Enchantments);
+        Assert.Contains("Unholy", giftOfDeath.Enchantments);
+        Assert.Contains("Against Helpless Plus 2", giftOfDeath.Enchantments);
+    }
+
+    [Fact]
+    public void PersonalChest_AndSharedInventory_BothSupportEnchantments()
+    {
+        // Arrange - Tests that both personal and shared inventory handle enchantments
+        var inventory = new InventoryJson
+        {
+            PersonalChest = new InventoryCollectionJson
+            {
+                Weapons = new List<InventoryItemJson>
+                {
+                    new InventoryItemJson
+                    {
+                        Name = "Earth Breaker Flaming Plus 2",
+                        Type = "Earth Breaker",
+                        Enchantments = new List<string> { "Enhancement 2", "Flaming" }
+                    }
+                }
+            },
+            SharedInventory = new InventoryCollectionJson
+            {
+                Weapons = new List<InventoryItemJson>
+                {
+                    new InventoryItemJson
+                    {
+                        Name = "Gift Of Death",
+                        Type = "Kukri",
+                        Enchantments = new List<string> { "Enhancement 2", "Unholy", "Against Helpless Plus 2" }
+                    }
+                }
+            }
+        };
+
+        // Act
+        var personalWeapon = inventory.PersonalChest?.Weapons?.FirstOrDefault();
+        var sharedWeapon = inventory.SharedInventory?.Weapons?.FirstOrDefault();
+
+        // Assert - Both inventories should support enchantments
+        Assert.NotNull(personalWeapon);
+        Assert.Equal(2, personalWeapon.Enchantments?.Count);
+        
+        Assert.NotNull(sharedWeapon);
+        Assert.Equal(3, sharedWeapon.Enchantments?.Count);
+    }
 }

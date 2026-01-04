@@ -55,9 +55,9 @@ public class InventoryParser
         return sb.ToString();
     }
 
-    private List<(string blueprint, int count)> ParseInventoryItems(ItemCollection? inventory)
+    private List<(string blueprint, int count, List<string>? enchantments)> ParseInventoryItems(ItemCollection? inventory)
     {
-        var items = new List<(string blueprint, int count)>();
+        var items = new List<(string blueprint, int count, List<string>? enchantments)>();
         
         if (inventory?.Items == null || inventory.Items.Count == 0)
         {
@@ -67,15 +67,34 @@ public class InventoryParser
         foreach (var item in inventory.Items)
         {
             if (item?.Blueprint == null) continue;
-            items.Add((item.Blueprint, item.Count));
+            
+            // Get enchantments from the item's Enchantments list
+            List<string>? enchantments = null;
+            if (item.Enchantments?.Facts != null && item.Enchantments.Facts.Any())
+            {
+                enchantments = new List<string>();
+                foreach (var enchantRef in item.Enchantments.Facts)
+                {
+                    if (!string.IsNullOrEmpty(enchantRef.Blueprint))
+                    {
+                        var enchantName = _blueprintLookup.GetName(enchantRef.Blueprint);
+                        if (enchantName != enchantRef.Blueprint)
+                        {
+                            enchantments.Add(enchantName);
+                        }
+                    }
+                }
+            }
+            
+            items.Add((item.Blueprint, item.Count, enchantments?.Any() == true ? enchantments : null));
         }
         
         return items;
     }
 
-    private List<(string blueprint, int count)> ParseSharedInventoryFromParty(JToken? partyJson)
+    private List<(string blueprint, int count, List<string>? enchantments)> ParseSharedInventoryFromParty(JToken? partyJson)
     {
-        var items = new List<(string blueprint, int count)>();
+        var items = new List<(string blueprint, int count, List<string>? enchantments)>();
         
         if (partyJson == null) return items;
 
@@ -94,42 +113,82 @@ public class InventoryParser
 
             foreach (var item in itemsArray)
             {
-                // Skip null items or items without required properties
-                if (item == null || item.Type == JTokenType.Null) continue;
-
-                // Get inventory slot index - only include items with index >= 0 (shared inventory)
-                // Items with index -1 are equipped items
-                var slotIndex = item["m_InventorySlotIndex"]?.Value<int>();
-                if (slotIndex == null || slotIndex < 0) continue;
-
-                var blueprint = item["m_Blueprint"]?.Value<string>();
-                var count = item["m_Count"]?.Value<int>() ?? 1;
-
-                if (!string.IsNullOrEmpty(blueprint))
+                try
                 {
-                    items.Add((blueprint, count));
+                    // Skip null items or items without required properties
+                    if (item == null || item.Type == JTokenType.Null) continue;
+
+                    // Get inventory slot index - only include items with index >= 0 (shared inventory)
+                    // Items with index -1 are equipped items
+                    var slotIndex = item["m_InventorySlotIndex"]?.Value<int>();
+                    if (slotIndex == null || slotIndex < 0) continue;
+
+                    var blueprint = item["m_Blueprint"]?.Value<string>();
+                    var count = item["m_Count"]?.Value<int>() ?? 1;
+
+                    if (!string.IsNullOrEmpty(blueprint))
+                    {
+                        // Parse enchantments from m_Enchantments.m_Facts[] (same structure as personal chest)
+                        var enchantments = new List<string>();
+                        try
+                        {
+                            var enchantsToken = item["m_Enchantments"];
+                            if (enchantsToken != null && enchantsToken.Type == JTokenType.Object)
+                            {
+                                // Look for m_Facts array inside m_Enchantments
+                                var factsArray = enchantsToken["m_Facts"];
+                                
+                                if (factsArray != null && factsArray is JArray arr && arr.Any())
+                                {
+                                    foreach (var fact in arr)
+                                    {
+                                        var enchantBlueprint = fact?["Blueprint"]?.Value<string>();
+                                        if (!string.IsNullOrEmpty(enchantBlueprint))
+                                        {
+                                            var enchantName = _blueprintLookup.GetName(enchantBlueprint);
+                                            if (enchantName != enchantBlueprint)
+                                            {
+                                                enchantments.Add(enchantName);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // If enchantment parsing fails, continue with empty enchantments list
+                        }
+                        
+                        items.Add((blueprint, count, enchantments.Any() ? enchantments : null));
+                    }
+                }
+                catch
+                {
+                    // If parsing this item fails, skip it and continue
+                    continue;
                 }
             }
         }
         catch (Exception)
         {
             // If parsing fails, return empty list
-            return new List<(string blueprint, int count)>();
+            return new List<(string blueprint, int count, List<string>? enchantments)>();
         }
 
         return items;
     }
 
-    private void AppendCategorizedItems(StringBuilder sb, List<(string blueprint, int count)> items)
+    private void AppendCategorizedItems(StringBuilder sb, List<(string blueprint, int count, List<string>? enchantments)> items)
     {
         // Group items by category
-        var weapons = new List<(string name, string? type, int count)>();
-        var armor = new List<(string name, string? type, int count)>();
-        var accessories = new List<(string name, int count)>();
+        var weapons = new List<(string name, string? type, int count, List<string>? enchantments)>();
+        var armor = new List<(string name, string? type, int count, List<string>? enchantments)>();
+        var accessories = new List<(string name, int count, List<string>? enchantments)>();
         var usables = new List<(string name, int count)>();
         var other = new List<(string name, int count)>();
 
-        foreach (var (blueprint, count) in items)
+        foreach (var (blueprint, count, enchantments) in items)
         {
             var itemName = _blueprintLookup.GetName(blueprint);
             if (itemName == blueprint) continue; // Skip unknown items
@@ -139,11 +198,11 @@ public class InventoryParser
             // Categorize items (order matters: check specific types first)
             if (IsWeapon(equipmentType))
             {
-                weapons.Add((itemName, equipmentType, count));
+                weapons.Add((itemName, equipmentType, count, enchantments));
             }
             else if (IsArmor(equipmentType))
             {
-                armor.Add((itemName, equipmentType, count));
+                armor.Add((itemName, equipmentType, count, enchantments));
             }
             else if (IsUsable(itemName))
             {
@@ -151,7 +210,7 @@ public class InventoryParser
             }
             else if (IsAccessory(itemName))
             {
-                accessories.Add((itemName, count));
+                accessories.Add((itemName, count, enchantments));
             }
             else
             {
@@ -163,11 +222,12 @@ public class InventoryParser
         if (weapons.Count > 0)
         {
             sb.AppendLine("WEAPONS:");
-            foreach (var (name, type, count) in weapons.OrderBy(w => w.name))
+            foreach (var (name, type, count, enchantments) in weapons.OrderBy(w => w.name))
             {
                 var countStr = count > 1 ? $" x{count}" : "";
                 var typeStr = !string.IsNullOrEmpty(type) ? $" [{type}]" : "";
-                sb.AppendLine($"  {name}{typeStr}{countStr}");
+                var enchantStr = enchantments != null && enchantments.Any() ? $" ({string.Join(", ", enchantments)})" : "";
+                sb.AppendLine($"  {name}{typeStr}{enchantStr}{countStr}");
             }
             sb.AppendLine();
         }
@@ -176,11 +236,12 @@ public class InventoryParser
         if (armor.Count > 0)
         {
             sb.AppendLine("ARMOR & SHIELDS:");
-            foreach (var (name, type, count) in armor.OrderBy(a => a.name))
+            foreach (var (name, type, count, enchantments) in armor.OrderBy(a => a.name))
             {
                 var countStr = count > 1 ? $" x{count}" : "";
                 var typeStr = !string.IsNullOrEmpty(type) ? $" [{type}]" : "";
-                sb.AppendLine($"  {name}{typeStr}{countStr}");
+                var enchantStr = enchantments != null && enchantments.Any() ? $" ({string.Join(", ", enchantments)})" : "";
+                sb.AppendLine($"  {name}{typeStr}{enchantStr}{countStr}");
             }
             sb.AppendLine();
         }
@@ -189,10 +250,11 @@ public class InventoryParser
         if (accessories.Count > 0)
         {
             sb.AppendLine("ACCESSORIES (Belts, Amulets, Rings, etc.):");
-            foreach (var (name, count) in accessories.OrderBy(a => a.name))
+            foreach (var (name, count, enchantments) in accessories.OrderBy(a => a.name))
             {
                 var countStr = count > 1 ? $" x{count}" : "";
-                sb.AppendLine($"  {name}{countStr}");
+                var enchantStr = enchantments != null && enchantments.Any() ? $" ({string.Join(", ", enchantments)})" : "";
+                sb.AppendLine($"  {name}{enchantStr}{countStr}");
             }
             sb.AppendLine();
         }

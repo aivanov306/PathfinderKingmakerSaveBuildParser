@@ -25,8 +25,15 @@ Tests for enchantment parsing (fixes for the inventory bug):
 - **JValue handling** - gracefully handles JValue types (the original bug scenario)
 - **Negative slot index validation** - skips items with invalid slot indices
 - **Item count handling** - properly reads item counts with defaults
+- **Shared inventory m_Facts parsing** - validates enchantments from party.json using m_Enchantments.m_Facts[] structure
+- **Shared inventory null handling** - handles null enchantments in shared inventory
+- **Shared inventory empty facts** - handles empty m_Facts arrays
+- **Shared inventory JValue skip** - correctly skips non-object enchantment values (potions, etc.)
+- **Blueprint field extraction** - uses "Blueprint" (not "m_Blueprint") from m_Facts entries
 
-These tests specifically validate the fixes made for the bug where 8 items (Acid Flask, Alchemists Fire, wands, accessories) were being silently skipped due to enchantment parsing exceptions.
+These tests specifically validate the fixes made for:
+1. The bug where 8 items (Acid Flask, Alchemists Fire, wands, accessories) were being silently skipped due to enchantment parsing exceptions
+2. The shared inventory (party.json) enchantment parsing that uses m_Enchantments.m_Facts[] structure instead of direct arrays
 
 #### `Services/TextFileGeneratorTests.cs`
 Tests for text output formatting:
@@ -87,6 +94,18 @@ Tests weapon set switching logic:
 - Active index updates
 - Weapon availability across sets
 
+#### `SharedInventory_WithEnchantedWeapon_ShouldParseEnchantments`
+Tests the Gift Of Death enchantment parsing:
+- Validates enchanted weapons from party.json (shared inventory)
+- Confirms all 3 enchantments are parsed (Enhancement 2, Unholy, Against Helpless Plus 2)
+- Ensures proper structure for m_Enchantments.m_Facts[] parsing
+
+#### `PersonalChest_AndSharedInventory_BothSupportEnchantments`
+Validates enchantment support across both inventory types:
+- Personal chest items with enchantments
+- Shared inventory items with enchantments
+- Ensures consistent behavior between both sources
+
 ## Running Tests
 
 Run all tests:
@@ -111,7 +130,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 ## Test Coverage
 
-Current test count: **37 tests**
+Current test count: **44 tests**
 
 ### Coverage Areas:
 - ✅ Data Models (JSON output structures)
@@ -121,10 +140,12 @@ Current test count: **37 tests**
 - ✅ Weapon Set Feature (all 4 sets with active indicator)
 - ✅ Inventory Categorization
 - ✅ Complete Workflow Integration
+- ✅ Shared Inventory Enchantments (party.json m_Facts structure)
 
 ### Bug Regression Tests:
 - **Inventory Parsing Bug**: Tests validate that items with various enchantment formats (null, JValue, JArray, nested) are properly parsed without exceptions
 - **Weapon Set Display**: Tests confirm all 4 weapon sets are displayed with correct active indicator
+- **Shared Inventory Enchantments**: Tests ensure party.json items with m_Enchantments.m_Facts[] structure are parsed correctly (Gift Of Death case)
 
 ## Dependencies
 

@@ -167,4 +167,131 @@ public class JsonOutputBuilderEnchantmentTests
         // Assert
         Assert.Equal(17, count);
     }
+
+    [Fact]
+    public void SharedInventory_ParsesEnchantmentsFromMFacts()
+    {
+        // Arrange - Simulates actual party.json structure with m_Enchantments.m_Facts[]
+        var itemJson = JObject.Parse(@"{
+            ""m_Blueprint"": ""d7958455107164b47a78eb303bab51ad"",
+            ""m_Count"": 1,
+            ""m_InventorySlotIndex"": 127,
+            ""m_Enchantments"": {
+                ""m_Facts"": [
+                    {
+                        ""Blueprint"": ""eb2faccc4c9487d43b3575d7e77ff3f5""
+                    },
+                    {
+                        ""Blueprint"": ""d05753b8df780fc4bb55b318f06af453""
+                    },
+                    {
+                        ""Blueprint"": ""2fa378b52d997da4e814af3c48d88d35""
+                    }
+                ]
+            }
+        }");
+
+        // Act
+        var enchantsToken = itemJson["m_Enchantments"];
+        var factsArray = enchantsToken?["m_Facts"];
+
+        // Assert
+        Assert.NotNull(enchantsToken);
+        Assert.NotNull(factsArray);
+        Assert.IsType<JArray>(factsArray);
+        Assert.Equal(3, factsArray.Count());
+        
+        var blueprints = factsArray.Select(f => f["Blueprint"]?.Value<string>()).ToList();
+        Assert.Contains("eb2faccc4c9487d43b3575d7e77ff3f5", blueprints);
+        Assert.Contains("d05753b8df780fc4bb55b318f06af453", blueprints);
+        Assert.Contains("2fa378b52d997da4e814af3c48d88d35", blueprints);
+    }
+
+    [Fact]
+    public void SharedInventory_HandlesNullEnchantments()
+    {
+        // Arrange
+        var itemJson = JObject.Parse(@"{
+            ""m_Blueprint"": ""test_blueprint"",
+            ""m_Count"": 1,
+            ""m_InventorySlotIndex"": 100,
+            ""m_Enchantments"": null
+        }");
+
+        // Act
+        var enchantsToken = itemJson["m_Enchantments"];
+
+        // Assert
+        Assert.NotNull(enchantsToken); // Token exists but is JValue with null
+        Assert.Equal(JTokenType.Null, enchantsToken.Type);
+    }
+
+    [Fact]
+    public void SharedInventory_HandlesEmptyMFacts()
+    {
+        // Arrange
+        var itemJson = JObject.Parse(@"{
+            ""m_Blueprint"": ""test_blueprint"",
+            ""m_Count"": 1,
+            ""m_InventorySlotIndex"": 100,
+            ""m_Enchantments"": {
+                ""m_Facts"": []
+            }
+        }");
+
+        // Act
+        var enchantsToken = itemJson["m_Enchantments"];
+        var factsArray = enchantsToken?["m_Facts"];
+
+        // Assert
+        Assert.NotNull(factsArray);
+        Assert.IsType<JArray>(factsArray);
+        Assert.Empty(factsArray);
+    }
+
+    [Fact]
+    public void SharedInventory_SkipsJValueEnchantments()
+    {
+        // Arrange - Some items have m_Enchantments as a simple value (like potions)
+        var itemJson = JObject.Parse(@"{
+            ""m_Blueprint"": ""potion_blueprint"",
+            ""m_Count"": 5,
+            ""m_InventorySlotIndex"": 50,
+            ""m_Enchantments"": false
+        }");
+
+        // Act
+        var enchantsToken = itemJson["m_Enchantments"];
+
+        // Assert
+        Assert.NotNull(enchantsToken);
+        Assert.Equal(JTokenType.Boolean, enchantsToken.Type);
+        // Should be skipped when Type != JTokenType.Object
+    }
+
+    [Fact]
+    public void SharedInventory_ExtractsCorrectBlueprintField()
+    {
+        // Arrange - Tests that we use "Blueprint" not "m_Blueprint" in m_Facts
+        var itemJson = JObject.Parse(@"{
+            ""m_Blueprint"": ""item_blueprint"",
+            ""m_Count"": 1,
+            ""m_InventorySlotIndex"": 100,
+            ""m_Enchantments"": {
+                ""m_Facts"": [
+                    {
+                        ""$type"": ""Kingmaker.Blueprints.Items.Ecnchantments.ItemEnchantment"",
+                        ""Blueprint"": ""enchantment_blueprint_123""
+                    }
+                ]
+            }
+        }");
+
+        // Act
+        var fact = itemJson["m_Enchantments"]?["m_Facts"]?.First;
+        var blueprint = fact?["Blueprint"]?.Value<string>();
+
+        // Assert
+        Assert.Equal("enchantment_blueprint_123", blueprint);
+    }
 }

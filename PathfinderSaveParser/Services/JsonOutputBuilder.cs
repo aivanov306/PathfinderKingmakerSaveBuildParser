@@ -181,21 +181,21 @@ public class JsonOutputBuilder
 
                     if (!string.IsNullOrEmpty(blueprint))
                     {
-                        // Parse enchantments
+                        // Parse enchantments from m_Enchantments.m_Facts[] (same structure as personal chest)
                         var enchantments = new List<string>();
                         try
                         {
                             var enchantsToken = item["m_Enchantments"];
-                            if (enchantsToken != null)
+                            if (enchantsToken != null && enchantsToken.Type == JTokenType.Object)
                             {
-                                // Handle case where m_Enchantments might be nested (e.g., m_Enchantments -> m_Enchantments)
-                                var enchantsArray = enchantsToken is JArray ? enchantsToken : enchantsToken["m_Enchantments"];
+                                // Look for m_Facts array inside m_Enchantments
+                                var factsArray = enchantsToken["m_Facts"];
                                 
-                                if (enchantsArray != null && enchantsArray is JArray arr && arr.Any())
+                                if (factsArray != null && factsArray is JArray arr && arr.Any())
                                 {
-                                    foreach (var enchant in arr)
+                                    foreach (var fact in arr)
                                     {
-                                        var enchantBlueprint = enchant?["m_Blueprint"]?.Value<string>();
+                                        var enchantBlueprint = fact?["Blueprint"]?.Value<string>();
                                         if (!string.IsNullOrEmpty(enchantBlueprint))
                                         {
                                             var enchantName = _blueprintLookup.GetName(enchantBlueprint);
