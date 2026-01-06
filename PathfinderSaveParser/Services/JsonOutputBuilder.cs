@@ -881,16 +881,25 @@ public class JsonOutputBuilder
                 }
             }
 
-            // Parse known spells
+            // Parse known spells and special spells (domain spells)
             var knownSpells = spellbook["m_KnownSpells"];
-            if (knownSpells != null && knownSpells.HasValues)
+            var specialSpells = spellbook["m_SpecialSpells"];
+            
+            int maxLevel = Math.Max(
+                knownSpells?.Count() ?? 0,
+                specialSpells?.Count() ?? 0
+            );
+            
+            for (int level = 0; level < maxLevel; level++)
             {
-                int level = 0;
-                foreach (var levelSpells in knownSpells)
+                var spellNames = new List<string>();
+                
+                // Add regular known spells
+                if (knownSpells != null && level < knownSpells.Count())
                 {
+                    var levelSpells = knownSpells.ElementAtOrDefault(level);
                     if (levelSpells != null && levelSpells.HasValues)
                     {
-                        var spellNames = new List<string>();
                         foreach (var spell in levelSpells)
                         {
                             var spellBlueprint = spell["Blueprint"]?.ToString();
@@ -905,12 +914,36 @@ public class JsonOutputBuilder
                                 }
                             }
                         }
-                        if (spellNames.Any())
+                    }
+                }
+                
+                // Add domain/special spells
+                if (specialSpells != null && level < specialSpells.Count())
+                {
+                    var levelSpecialSpells = specialSpells.ElementAtOrDefault(level);
+                    if (levelSpecialSpells != null && levelSpecialSpells.HasValues)
+                    {
+                        foreach (var spell in levelSpecialSpells)
                         {
-                            spellbookJson.KnownSpells[level] = spellNames;
+                            var spellBlueprint = spell["Blueprint"]?.ToString();
+                            if (!string.IsNullOrEmpty(spellBlueprint))
+                            {
+                                var spellName = _blueprintLookup.GetName(spellBlueprint);
+                                if (!string.IsNullOrEmpty(spellName) && 
+                                    !spellName.StartsWith("Blueprint_") && 
+                                    spellName != "None" &&
+                                    !spellNames.Contains(spellName)) // Avoid duplicates
+                                {
+                                    spellNames.Add(spellName + " (Domain)");
+                                }
+                            }
                         }
                     }
-                    level++;
+                }
+                
+                if (spellNames.Any())
+                {
+                    spellbookJson.KnownSpells[level] = spellNames;
                 }
             }
 

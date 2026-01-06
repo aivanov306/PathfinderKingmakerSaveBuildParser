@@ -149,43 +149,84 @@ public class SpellbookParser
 
     private void ParseKnownSpells(JToken spellbook, StringBuilder sb)
     {
+        // Parse regular known spells
         var knownSpells = spellbook["m_KnownSpells"];
-        if (knownSpells == null || !knownSpells.HasValues) return;
+        // Parse domain/special spells
+        var specialSpells = spellbook["m_SpecialSpells"];
+        
+        // If neither exists, return early
+        if ((knownSpells == null || !knownSpells.HasValues) && 
+            (specialSpells == null || !specialSpells.HasValues))
+        {
+            return;
+        }
 
         sb.AppendLine();
         sb.AppendLine("Known Spells:");
 
         int level = 0;
         bool hasAnySpells = false;
+        int maxLevel = Math.Max(
+            knownSpells?.Count() ?? 0, 
+            specialSpells?.Count() ?? 0
+        );
 
-        foreach (var levelSpells in knownSpells)
+        for (int i = 0; i < maxLevel; i++)
         {
-            if (levelSpells.HasValues)
+            var spells = new List<string>();
+            
+            // Add regular known spells
+            if (knownSpells != null && i < knownSpells.Count())
             {
-                var spells = new List<string>();
-                
-                foreach (var spell in levelSpells)
+                var levelSpells = knownSpells.ElementAtOrDefault(i);
+                if (levelSpells != null && levelSpells.HasValues)
                 {
-                    var spellBlueprint = spell["Blueprint"]?.ToString();
-                    if (!string.IsNullOrEmpty(spellBlueprint))
+                    foreach (var spell in levelSpells)
                     {
-                        var spellName = _blueprintLookup.GetName(spellBlueprint);
-                        if (!string.IsNullOrEmpty(spellName) && 
-                            !spellName.StartsWith("Blueprint_") && 
-                            spellName != "None")
+                        var spellBlueprint = spell["Blueprint"]?.ToString();
+                        if (!string.IsNullOrEmpty(spellBlueprint))
                         {
-                            spells.Add(spellName);
+                            var spellName = _blueprintLookup.GetName(spellBlueprint);
+                            if (!string.IsNullOrEmpty(spellName) && 
+                                !spellName.StartsWith("Blueprint_") && 
+                                spellName != "None")
+                            {
+                                spells.Add(spellName);
+                            }
                         }
                     }
                 }
-
-                if (spells.Any())
+            }
+            
+            // Add domain/special spells
+            if (specialSpells != null && i < specialSpells.Count())
+            {
+                var levelSpecialSpells = specialSpells.ElementAtOrDefault(i);
+                if (levelSpecialSpells != null && levelSpecialSpells.HasValues)
                 {
-                    hasAnySpells = true;
-                    sb.AppendLine($"  Level {level}: {string.Join(", ", spells)}");
+                    foreach (var spell in levelSpecialSpells)
+                    {
+                        var spellBlueprint = spell["Blueprint"]?.ToString();
+                        if (!string.IsNullOrEmpty(spellBlueprint))
+                        {
+                            var spellName = _blueprintLookup.GetName(spellBlueprint);
+                            if (!string.IsNullOrEmpty(spellName) && 
+                                !spellName.StartsWith("Blueprint_") && 
+                                spellName != "None" &&
+                                !spells.Contains(spellName)) // Avoid duplicates
+                            {
+                                spells.Add(spellName + " (Domain)");
+                            }
+                        }
+                    }
                 }
             }
-            level++;
+
+            if (spells.Any())
+            {
+                hasAnySpells = true;
+                sb.AppendLine($"  Level {i}: {string.Join(", ", spells)}");
+            }
         }
 
         if (!hasAnySpells)
