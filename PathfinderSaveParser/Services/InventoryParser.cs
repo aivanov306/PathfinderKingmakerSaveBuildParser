@@ -300,7 +300,7 @@ public class InventoryParser
             "Longsword", "Shortsword", "Greatsword", "Bastard Sword", "Dueling Sword",
             "Dagger", "Kukri", "Punching Dagger", "Sickle", "Starknife",
             "Battleaxe", "Handaxe", "Greataxe", "Warhammer", "Light Hammer",
-            "Heavy Flail", "Light Flail", "Greatclub", "Club", "Heavy Mace", "Light Mace",
+            "Heavy Flail", "Light Flail", "Flail", "Greatclub", "Club", "Heavy Mace", "Light Mace",
             "Scimitar", "Falchion", "Rapier", "Estoc", "Sai",
             "Glaive", "Scythe", "Bardiche", "Fauchard", "Nunchaku",
             "Light Pick", "Heavy Pick", "Kama", "Trident", "Sling Staff",
@@ -320,7 +320,8 @@ public class InventoryParser
         var armorTypes = new[]
         {
             "Light Armor", "Medium Armor", "Heavy Armor",
-            "Buckler", "Light Shield", "Heavy Shield", "Tower Shield"
+            "Buckler", "Light Shield", "Heavy Shield", "Tower Shield",
+            "Cloth"
         };
 
         return armorTypes.Any(at => type.Equals(at, StringComparison.OrdinalIgnoreCase));

@@ -319,7 +319,8 @@ public class JsonOutputBuilder
             "Light Armor", "Medium Armor", "Heavy Armor",
             "Buckler", "Light Shield", "Heavy Shield", "Tower Shield",
             "Padded", "Leather", "Studded", "Chain Shirt", "Hide", "Scale Mail",
-            "Chainmail", "Breastplate", "Splint Mail", "Banded Mail", "Half-Plate", "Full Plate"
+            "Chainmail", "Breastplate", "Splint Mail", "Banded Mail", "Half-Plate", "Full Plate",
+            "Cloth"
         };
         return armorTypes.Any(at => type.Contains(at, StringComparison.OrdinalIgnoreCase));
     }

@@ -164,7 +164,6 @@ public class SpellbookParser
         sb.AppendLine();
         sb.AppendLine("Known Spells:");
 
-        int level = 0;
         bool hasAnySpells = false;
         int maxLevel = Math.Max(
             knownSpells?.Count() ?? 0, 
