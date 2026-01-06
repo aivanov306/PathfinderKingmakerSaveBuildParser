@@ -211,6 +211,16 @@ public class TextFileGenerator
                     sb.AppendLine($"  {spellbook.ClassName}:");
                     sb.AppendLine($"    Caster Level: {spellbook.CasterLevel}");
                     
+                    if (spellbook.SpellSlotsPerDay != null && spellbook.SpellSlotsPerDay.Any())
+                    {
+                        sb.AppendLine("    Spell Slots per Day:");
+                        foreach (var level in spellbook.SpellSlotsPerDay.Keys.OrderBy(k => k))
+                        {
+                            var slots = spellbook.SpellSlotsPerDay[level];
+                            sb.AppendLine($"      Level {level}: {slots} slots");
+                        }
+                    }
+                    
                     if (spellbook.KnownSpells != null && spellbook.KnownSpells.Any())
                     {
                         sb.AppendLine("    Known Spells:");
