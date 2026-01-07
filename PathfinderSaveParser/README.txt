@@ -135,7 +135,7 @@ You can also manually place files in the SavedGame/ folder:
 Results are saved to the Output/ folder:
 
 TEXT FILES (Human-readable reports):
-- kingdom_stats.txt - Kingdom statistics, game time, days, gold, BP, and advisor assignments
+- kingdom_stats.txt - Kingdom statistics, kingdom days, gold, BP, and advisor assignments
 - inventory.txt - Personal chest and shared party inventory (excludes equipped items)
 - all_characters.txt - Complete character builds with equipment
 - explored_locations.txt - All explored map locations
@@ -144,12 +144,12 @@ TEXT FILES (Human-readable reports):
 
 JSON FILES (Structured data for programmatic access):
 - CurrentState.json - Combined file with all game state data:
-  * Kingdom statistics (including game time and days), advisors
+  * Kingdom statistics (including kingdom days since founding), advisors
   * Personal chest and shared inventory
   * All characters with full builds
   * Explored map locations
   * Kingdom settlements with development levels and artisan details
-- kingdom_stats.json - Kingdom statistics in JSON format (includes game time)
+- kingdom_stats.json - Kingdom statistics in JSON format (includes kingdom days)
 - inventory.json - Both inventories in JSON format with categorization
 - all_characters.json - All character builds in JSON format
 - explored_locations.json - All explored map locations in JSON format
@@ -169,7 +169,7 @@ All text output is also displayed in the console.
 ✓ Active weapon set indicator (shows which set is currently equipped)
 ✓ Quick slots (potions, scrolls, wands, rods)
 ✓ Spellcasting information (spell slots per day and known spells)
-✓ Kingdom statistics (all 10 stats with ranks, game time, days elapsed)
+✓ Kingdom statistics (all 10 stats with ranks, kingdom days since founding)
 ✓ Kingdom advisors (shows assignments and availability)
 ✓ Gold tracking (displays current party gold)
 ✓ Inventory listing (personal chest + shared party inventory)

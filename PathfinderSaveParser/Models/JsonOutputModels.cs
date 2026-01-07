@@ -19,8 +19,7 @@ public class KingdomStatsJson
 {
     public string? Name { get; set; }
     public string? Alignment { get; set; }
-    public string? GameTime { get; set; }
-    public int Days { get; set; }
+    public int KingdomDays { get; set; }
     public int Gold { get; set; }
     public int BuildPoints { get; set; }
     public int? BuildPointsPerTurn { get; set; }

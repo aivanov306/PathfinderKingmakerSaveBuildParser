@@ -116,7 +116,7 @@ public class JsonOutputModelsTests
         // Assert
         Assert.Equal("Test Kingdom", kingdom.Name);
         Assert.Equal("Lawful Good", kingdom.Alignment);
-        Assert.Equal(100, kingdom.Days);
+        Assert.Equal(100, kingdom.KingdomDays);
         Assert.Equal(5000, kingdom.Gold);
         Assert.Equal(200, kingdom.BuildPoints);
     }

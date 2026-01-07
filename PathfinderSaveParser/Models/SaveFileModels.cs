@@ -88,6 +88,12 @@ public class Kingdom
     [JsonProperty("CurrentTurn")]
     public int CurrentTurn { get; set; }
 
+    [JsonProperty("CurrentDay")]
+    public int CurrentDay { get; set; }
+
+    [JsonProperty("StartDay")]
+    public int StartDay { get; set; }
+
     [JsonProperty("Leaders")]
     public List<KingdomLeader>? Leaders { get; set; }
 

@@ -10,7 +10,7 @@ Tests for the JSON output data models:
 - `WeaponSetJson` - weapon set structure
 - `EquipmentJson` - equipment with multiple weapon sets
 - `CharacterJson` - character data initialization
-- `KingdomStatsJson` - kingdom statistics
+- `KingdomStatsJson` - kingdom statistics (includes kingdom days since founding)
 - `InventoryCollectionJson` - inventory categorization
 - `CurrentStateJson` - complete game state structure
 

@@ -23,23 +23,11 @@ public class JsonOutputBuilder
     {
         if (kingdom == null) return null;
 
-        // Calculate days from game time (format: "days.hours:minutes:seconds")
-        int days = 0;
-        if (!string.IsNullOrEmpty(gameTime))
-        {
-            var parts = gameTime.Split('.');
-            if (parts.Length > 0 && int.TryParse(parts[0], out int parsedDays))
-            {
-                days = parsedDays;
-            }
-        }
-
         var json = new KingdomStatsJson
         {
             Name = kingdom.KingdomName,
             Alignment = kingdom.Alignment,
-            GameTime = gameTime,
-            Days = days,
+            KingdomDays = kingdom.CurrentDay,
             Gold = money,
             BuildPoints = kingdom.BuildPoints,
             BuildPointsPerTurn = bpPerTurnOverride,

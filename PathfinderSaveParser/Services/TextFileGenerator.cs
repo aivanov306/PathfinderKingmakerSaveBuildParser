@@ -31,8 +31,7 @@ public class TextFileGenerator
         sb.AppendLine();
         sb.AppendLine($"Kingdom Name: {kingdom.Name}");
         sb.AppendLine($"Alignment: {kingdom.Alignment}");
-        sb.AppendLine($"Game Time: {kingdom.GameTime}");
-        sb.AppendLine($"Days: {kingdom.Days}");
+        sb.AppendLine($"Kingdom Days: {kingdom.KingdomDays}");
         sb.AppendLine($"Gold: {kingdom.Gold:N0}");
         sb.AppendLine($"Build Points: {kingdom.BuildPoints}");
         sb.AppendLine($"Build Points Per Turn: {(kingdom.BuildPointsPerTurn.HasValue ? kingdom.BuildPointsPerTurn.Value.ToString() : "Unknown")}");

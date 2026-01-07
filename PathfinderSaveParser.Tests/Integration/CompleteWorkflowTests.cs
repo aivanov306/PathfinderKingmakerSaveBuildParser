@@ -176,7 +176,7 @@ public class CompleteWorkflowTests
 
         // Assert
         Assert.Equal("Test Kingdom", kingdom.Name);
-        Assert.Equal(365, kingdom.Days);
+        Assert.Equal(365, kingdom.KingdomDays);
         Assert.Equal(10000, kingdom.Gold);
         Assert.NotNull(kingdom.Stats);
         Assert.Equal(2, kingdom.Stats.Count);
