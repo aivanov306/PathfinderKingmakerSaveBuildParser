@@ -568,7 +568,7 @@ public class JsonOutputBuilder
         character.Spellbooks = ParseSpellbooksJson(descriptor);
 
         // Get level progression
-        character.LevelProgression = ParseLevelProgressionJson(progression);
+        character.LevelProgression = ParseLevelProgressionJson(progression, descriptor);
 
         return character;
     }
@@ -942,7 +942,7 @@ public class JsonOutputBuilder
         return spellbooks.Any() ? spellbooks : null;
     }
 
-    private List<LevelProgressionJson>? ParseLevelProgressionJson(JToken progression)
+    private List<LevelProgressionJson>? ParseLevelProgressionJson(JToken progression, JToken descriptor)
     {
         if (_resolver == null) return null;
 
@@ -951,6 +951,33 @@ public class JsonOutputBuilder
         if (selections == null) return null;
 
         var historyMap = new SortedDictionary<int, List<string>>();
+        
+        // Build feature parameters map from m_Facts in progression
+        var featureParams = new Dictionary<string, (string? weaponCategory, string? spellSchool, string? statType)>();
+        var features = progression["Features"]?["m_Facts"];
+        if (features != null)
+        {
+            foreach (var feature in features)
+            {
+                var blueprint = feature["Blueprint"]?.ToString();
+                if (string.IsNullOrEmpty(blueprint)) continue;
+                
+                var param = feature["Param"];
+                if (param != null)
+                {
+                    var weaponCategory = param["WeaponCategory"]?.ToString();
+                    var spellSchool = param["SpellSchool"]?.ToString();
+                    var statType = param["StatType"]?.ToString();
+                    
+                    if (!string.IsNullOrEmpty(weaponCategory) || 
+                        !string.IsNullOrEmpty(spellSchool) || 
+                        !string.IsNullOrEmpty(statType))
+                    {
+                        featureParams[blueprint] = (weaponCategory, spellSchool, statType);
+                    }
+                }
+            }
+        }
 
         foreach (var item in selections)
         {
@@ -980,6 +1007,29 @@ public class JsonOutputBuilder
                                 name != "None" && 
                                 !name.StartsWith("Blueprint_"))
                             {
+                                // Normalize parameterized feat names to use parentheses format
+                                if (_options.ShowFeatParameters)
+                                {
+                                    // Check if feature has Param fields (Weapon/Spell Focus, Improved Critical, etc.)
+                                    if (featureParams.TryGetValue(guid, out var parameters))
+                                    {
+                                        var paramText = "";
+                                        if (!string.IsNullOrEmpty(parameters.weaponCategory))
+                                            paramText = $" ({FormatWeaponCategory(parameters.weaponCategory)})";
+                                        else if (!string.IsNullOrEmpty(parameters.spellSchool))
+                                            paramText = $" ({parameters.spellSchool})";
+                                        else if (!string.IsNullOrEmpty(parameters.statType))
+                                            paramText = $" ({parameters.statType})";
+                                        
+                                        name += paramText;
+                                    }
+                                    // Handle feats that use specific blueprints (Skill Focus, etc.)
+                                    else
+                                    {
+                                        name = NormalizeParameterizedFeatName(name);
+                                    }
+                                }
+                                
                                 historyMap[level].Add(name);
                             }
                         }
@@ -1063,6 +1113,56 @@ public class JsonOutputBuilder
         }
 
         return result.Count > 0 ? result : null;
+    }
+
+    /// <summary>
+    /// Formats weapon category names with proper spacing (e.g., HeavyMace -> Heavy Mace)
+    /// </summary>
+    private string FormatWeaponCategory(string weaponCategory)
+    {
+        if (string.IsNullOrEmpty(weaponCategory)) return weaponCategory;
+        
+        // Insert space before uppercase letters (except first)
+        var result = System.Text.RegularExpressions.Regex.Replace(
+            weaponCategory, 
+            "([a-z])([A-Z])", 
+            "$1 $2"
+        );
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Normalizes parameterized feat names to use parentheses format
+    /// (e.g., "Skill Focus Thievery" -> "Skill Focus (Thievery)")
+    /// </summary>
+    private string NormalizeParameterizedFeatName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return name;
+        
+        // List of feat prefixes that should use parentheses format
+        var featPrefixes = new[]
+        {
+            "Skill Focus ",
+            "Exotic Weapon Proficiency ",
+            "Martial Weapon Proficiency ",
+            "Simple Weapon Proficiency "
+        };
+        
+        foreach (var prefix in featPrefixes)
+        {
+            if (name.StartsWith(prefix))
+            {
+                var parameter = name.Substring(prefix.Length);
+                // Only format if there are no parentheses already
+                if (!parameter.Contains("(") && !parameter.Contains(")"))
+                {
+                    return prefix.TrimEnd() + " (" + parameter + ")";
+                }
+            }
+        }
+        
+        return name;
     }
 
     private ArtisanItemJson? BuildArtisanItem(string itemBlueprint)
