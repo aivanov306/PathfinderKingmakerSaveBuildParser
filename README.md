@@ -19,6 +19,7 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
   - All armor and accessory slots (body, head, neck, belt, cloak, rings, bracers, gloves, boots)
   - Quick slots (potions, scrolls, wands, rods) with slot numbers
   - Equipment types displayed in brackets (e.g., [Greatsword], [Fullplate], [Tower Shield])
+  - Accessory slot types shown (e.g., [Ring], [Wrist], [Head], [Neck], [Belt], [Shoulders])
   - Item enchantments displayed inline
   - Distinguishes between empty slots, shields, and dual-wielding configurations
 - **Spellcasting**: Shows spellcasting information for all spellcaster classes
@@ -39,8 +40,9 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
 - **Shared Party Inventory**: Items in the party's shared inventory (m_InventorySlotIndex >= 0)
 - Both inventories saved to separate file with clear sections
   - Items categorized by type: Weapons, Armor & Shields, Accessories, Usables, Other
-  - Equipment types shown in brackets for weapons and armor
-  - Accessories include belts, amulets, rings, bracers, headbands, cloaks, helmets, gloves, boots
+  - Equipment types shown in brackets: [Longsword], [Breastplate], [Ring], [Wrist], [Head], [Note]
+  - Accessories display slot type (Ring, Wrist, Head, Neck, Belt, Shoulders, Gloves, Feet, Shirt)
+  - Notes display [Note] type for easy identification
   - Usables include potions, scrolls, wands, flasks, alchemist's fire
   - Item counts displayed for stackable items (x2, x5, etc.)
   - Total item count and unique item count summary per inventory
@@ -437,15 +439,15 @@ Weapon Set 4:
 
 Armor & Accessories:
   Body      : Fullplate Standart Plus 2 [Fullplate] (Armor Enhancement Bonus 2)
-  Head      : Headband Of Charisma 2 (Charisma 2)
-  Neck      : Amulet Of Natural Armor 2 (Natural Armor Enhancement 2)
-  Belt      : Belt Of Dexterity Constitution 4 (Dexterity 4, Constitution 4)
-  Cloak     : Cloak Wyvern Item (Cloak Of Wyvern Enchantment, Natural Armor Enhancement 2)
-  Ring 1    : Ring Of Protection 2 (Deflection 2)
+  Head      : Headband Of Charisma 2 [Head] (Charisma 2)
+  Neck      : Amulet Of Natural Armor 2 [Neck] (Natural Armor Enhancement 2)
+  Belt      : Belt Of Dexterity Constitution 4 [Belt] (Dexterity 4, Constitution 4)
+  Cloak     : Cloak Wyvern Item [Shoulders] (Cloak Of Wyvern Enchantment, Natural Armor Enhancement 2)
+  Ring 1    : Ring Of Protection 2 [Ring] (Deflection 2)
   Ring 2    : (empty)
   Bracers   : (empty)
-  Gloves    : Crazy Scientists Gloves Item (Acid Resistance 15 Enchant, Fire Resistance 15 Enchant)
-  Boots     : Boots Of Swift Foot (Speed Increase)
+  Gloves    : Crazy Scientists Gloves Item [Gloves] (Acid Resistance 15 Enchant, Fire Resistance 15 Enchant)
+  Boots     : Boots Of Swift Foot [Feet] (Speed Increase)
 
 Quick Slots (Potions, Scrolls, Rods, Wands):
   Slot 1: Potion Of Cure Light Wounds

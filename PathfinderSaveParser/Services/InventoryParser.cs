@@ -195,9 +195,28 @@ public class InventoryParser
             if (itemName == blueprint) continue; // Skip unknown items
 
             var equipmentType = _blueprintLookup.GetEquipmentType(blueprint);
+            var blueprintType = _blueprintLookup.GetBlueprintType(blueprint);
 
-            // Categorize items based on equipment type from database, with fallbacks
-            if (_categorization.IsWeapon(equipmentType) || (string.IsNullOrEmpty(equipmentType) && _categorization.IsWeaponByName(itemName)))
+            // Categorize items using priority: 1) Blueprint type (most reliable), 2) Equipment type, 3) Name-based fallback
+            var categoryFromBlueprint = _categorization.GetCategoryFromBlueprintType(blueprintType);
+            
+            if (categoryFromBlueprint == "Weapon")
+            {
+                weapons.Add((itemName, equipmentType, count, enchantments));
+            }
+            else if (categoryFromBlueprint == "Armor")
+            {
+                armor.Add((itemName, equipmentType, count, enchantments));
+            }
+            else if (categoryFromBlueprint == "Usable")
+            {
+                usables.Add((itemName, count));
+            }
+            else if (categoryFromBlueprint == "Accessories")
+            {
+                accessories.Add((itemName, count, enchantments));
+            }
+            else if (_categorization.IsWeapon(equipmentType) || (string.IsNullOrEmpty(equipmentType) && _categorization.IsWeaponByName(itemName)))
             {
                 weapons.Add((itemName, equipmentType, count, enchantments));
             }

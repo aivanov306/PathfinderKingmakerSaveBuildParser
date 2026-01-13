@@ -12,6 +12,25 @@ public class ItemCategorizationTests
     }
 
     [Theory]
+    [InlineData("BlueprintItemWeapon", "Weapon")]
+    [InlineData("BlueprintItemArmor", "Armor")]
+    [InlineData("BlueprintItemShield", "Armor")]
+    [InlineData("BlueprintItemEquipmentUsable", "Usable")]
+    [InlineData("BlueprintItemEquipmentRing", "Accessories")]
+    [InlineData("BlueprintItemEquipmentBelt", "Accessories")]
+    [InlineData("BlueprintItemEquipmentHead", "Accessories")]
+    [InlineData("BlueprintItemEquipmentNeck", "Accessories")]
+    [InlineData("BlueprintItem", null)] // Plain items require further categorization
+    public void GetCategoryFromBlueprintType_CategorizesCorrectly(string blueprintType, string? expectedCategory)
+    {
+        // Act
+        var category = _service.GetCategoryFromBlueprintType(blueprintType);
+
+        // Assert
+        Assert.Equal(expectedCategory, category);
+    }
+
+    [Theory]
     [InlineData("Kingmaker.Items.ItemEntityWeapon, Assembly-CSharp", "Weapon")]
     [InlineData("Kingmaker.Items.ItemEntityArmor, Assembly-CSharp", "Armor")]
     [InlineData("Kingmaker.Items.ItemEntityShield, Assembly-CSharp", "Armor")]

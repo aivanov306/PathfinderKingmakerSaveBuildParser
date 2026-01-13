@@ -250,22 +250,36 @@ public class JsonOutputBuilder
             }
 
             var type = _blueprintLookup.GetEquipmentType(blueprint);
+            var blueprintType = _blueprintLookup.GetBlueprintType(blueprint);
+            
+            // Extract slot type from blueprint type for accessories and notes
+            var displayType = GetDisplayType(blueprintType, type);
+            
             var item = new InventoryItemJson
             {
                 Name = name,
-                Type = type,
+                Type = displayType,
                 Count = count,
                 Enchantments = enchantments
             };
 
-            // Categorize using priority: 1) JSON $type (most reliable), 2) equipment type from database, 3) name-based fallback
-            var categoryFromType = _categorization.GetCategoryFromJsonType(jsonType);
+            // Categorize using priority: 1) Blueprint type (most reliable), 2) JSON $type, 3) equipment type, 4) name-based fallback
+            var categoryFromBlueprint = _categorization.GetCategoryFromBlueprintType(blueprintType);
+            var categoryFromJsonType = _categorization.GetCategoryFromJsonType(jsonType);
             
-            if (categoryFromType == "Weapon")
+            if (categoryFromBlueprint == "Weapon")
                 collection.Weapons!.Add(item);
-            else if (categoryFromType == "Armor")
+            else if (categoryFromBlueprint == "Armor")
                 collection.Armor!.Add(item);
-            else if (categoryFromType == "Usable")
+            else if (categoryFromBlueprint == "Usable")
+                collection.Usables!.Add(item);
+            else if (categoryFromBlueprint == "Accessories")
+                collection.Accessories!.Add(item);
+            else if (categoryFromJsonType == "Weapon")
+                collection.Weapons!.Add(item);
+            else if (categoryFromJsonType == "Armor")
+                collection.Armor!.Add(item);
+            else if (categoryFromJsonType == "Usable")
                 collection.Usables!.Add(item);
             else if (_categorization.IsWeapon(type))
                 collection.Weapons!.Add(item);
@@ -987,5 +1001,33 @@ public class JsonOutputBuilder
             Type = itemType,
             Enchantments = null // Artisan items are blueprints, not instances, so no enchantment data
         };
+    }
+
+    /// <summary>
+    /// Extracts display type from blueprint type for accessories and notes
+    /// </summary>
+    private string GetDisplayType(string? blueprintType, string? equipmentType)
+    {
+        if (string.IsNullOrEmpty(blueprintType))
+            return equipmentType ?? "";
+
+        // For notes, show "Note"
+        if (blueprintType.Equals("BlueprintItemNote", StringComparison.OrdinalIgnoreCase))
+            return "Note";
+
+        // For equipment accessories, extract slot name
+        if (blueprintType.StartsWith("BlueprintItemEquipment", StringComparison.OrdinalIgnoreCase))
+        {
+            // BlueprintItemEquipmentRing -> Ring
+            // BlueprintItemEquipmentHead -> Head
+            // BlueprintItemEquipmentNeck -> Neck
+            // etc.
+            var slotName = blueprintType.Substring("BlueprintItemEquipment".Length);
+            if (!string.IsNullOrEmpty(slotName) && !slotName.Equals("Usable", StringComparison.OrdinalIgnoreCase))
+                return slotName;
+        }
+
+        // For weapons and armor, use equipment type (e.g., "Longsword", "Breastplate")
+        return equipmentType ?? "";
     }
 }

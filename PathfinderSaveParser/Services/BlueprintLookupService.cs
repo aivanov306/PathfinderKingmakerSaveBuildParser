@@ -10,6 +10,7 @@ public class BlueprintLookupService
 {
     private readonly Dictionary<string, string> _blueprintNames;
     private readonly Dictionary<string, string> _equipmentTypes;
+    private readonly Dictionary<string, string> _blueprintTypes;
 
     public BlueprintLookupService()
     {
@@ -33,7 +34,18 @@ public class BlueprintLookupService
                         // New format with separate dictionaries
                         _blueprintNames = JsonSerializer.Deserialize<Dictionary<string, string>>(namesElement.GetRawText()) ?? new();
                         _equipmentTypes = JsonSerializer.Deserialize<Dictionary<string, string>>(typesElement.GetRawText()) ?? new();
-                        Console.WriteLine($"Loaded {_blueprintNames.Count} blueprints and {_equipmentTypes.Count} equipment types from database.");
+                        
+                        // Try to load BlueprintTypes if available (newer format)
+                        if (root.TryGetProperty("BlueprintTypes", out var blueprintTypesElement))
+                        {
+                            _blueprintTypes = JsonSerializer.Deserialize<Dictionary<string, string>>(blueprintTypesElement.GetRawText()) ?? new();
+                            Console.WriteLine($"Loaded {_blueprintNames.Count} blueprints, {_equipmentTypes.Count} equipment types, and {_blueprintTypes.Count} blueprint types from database.");
+                        }
+                        else
+                        {
+                            _blueprintTypes = new Dictionary<string, string>();
+                            Console.WriteLine($"Loaded {_blueprintNames.Count} blueprints and {_equipmentTypes.Count} equipment types from database.");
+                        }
                         return;
                     }
                 }
@@ -50,6 +62,7 @@ public class BlueprintLookupService
                     {
                         _blueprintNames = oldDatabase;
                         _equipmentTypes = new Dictionary<string, string>();
+                        _blueprintTypes = new Dictionary<string, string>();
                         Console.WriteLine($"Loaded {_blueprintNames.Count} blueprints from database (legacy format, no equipment types).");
                         return;
                     }
@@ -68,6 +81,7 @@ public class BlueprintLookupService
         Console.WriteLine("Warning: Blueprint database not found. Names will be generic.");
         _blueprintNames = new Dictionary<string, string>();
         _equipmentTypes = new Dictionary<string, string>();
+        _blueprintTypes = new Dictionary<string, string>();
     }
 
     public string GetName(string? blueprintId)
@@ -95,6 +109,17 @@ public class BlueprintLookupService
         var type = _equipmentTypes.TryGetValue(blueprintId, out var t) ? t : null;
         
         return (name, type);
+    }
+    
+    /// <summary>
+    /// Get blueprint type from database (e.g., BlueprintItem, BlueprintItemWeapon, BlueprintItemEquipmentRing)
+    /// </summary>
+    public string? GetBlueprintType(string? blueprintId)
+    {
+        if (string.IsNullOrEmpty(blueprintId))
+            return null;
+
+        return _blueprintTypes.TryGetValue(blueprintId, out var type) ? type : null;
     }
 
     public void AddCustomMapping(string blueprintId, string name)

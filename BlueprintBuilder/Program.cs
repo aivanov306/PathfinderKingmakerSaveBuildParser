@@ -14,6 +14,9 @@ var blueprintNames = new Dictionary<string, string>();
 // Store equipment types separately (only for weapons, armor, shields)
 var equipmentTypes = new Dictionary<string, string>();
 
+// Store blueprint item types from JSON $type field
+var blueprintItemTypes = new Dictionary<string, string>();
+
 // Look for any folder starting with "Blueprints" in the parent directory (solution root)
 var currentDir = Directory.GetCurrentDirectory();
 
@@ -97,6 +100,10 @@ Console.WriteLine($"Extracted {count} blueprints");
 Console.WriteLine("\nExtracting equipment type information from JSON files...");
 ExtractEquipmentTypes(blueprintsDir, equipmentTypes);
 
+// Extract blueprint item types and display names from all JSON files
+Console.WriteLine("\nExtracting blueprint item types and display names from JSON files...");
+ExtractBlueprintItemTypes(blueprintsDir, blueprintItemTypes, blueprintNames);
+
 // Determine output path: PathfinderSaveParser folder if exists, otherwise current directory
 var parserProjectPath = Path.Combine(solutionRootFullPath, "PathfinderSaveParser");
 string outputPath;
@@ -121,7 +128,8 @@ Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
 var database = new
 {
     Names = blueprintNames,
-    EquipmentTypes = equipmentTypes
+    EquipmentTypes = equipmentTypes,
+    BlueprintTypes = blueprintItemTypes
 };
 
 var jsonContent = JsonSerializer.Serialize(database, new JsonSerializerOptions { WriteIndented = true });
@@ -130,6 +138,7 @@ Console.WriteLine($"JSON database saved to:");
 Console.WriteLine($"  - {fullPath}");
 Console.WriteLine($"\nTotal blueprints: {blueprintNames.Count}");
 Console.WriteLine($"Equipment types: {equipmentTypes.Count}");
+Console.WriteLine($"Blueprint types: {blueprintItemTypes.Count}");
 Console.WriteLine("\nPress any key to exit...");
 Console.ReadKey();
 
@@ -398,5 +407,114 @@ string NormalizeBlueprintName(string name)
     withSpaces = Regex.Replace(withSpaces, @"(\d+)", " $1"); // Add space before numbers
     withSpaces = Regex.Replace(withSpaces, @"\s+", " "); // Collapse multiple spaces
     
+    // Fix common acronyms that shouldn't be split (e.g., "A C" -> "AC")
+    withSpaces = Regex.Replace(withSpaces, @"\bA C\b", "AC");
+    withSpaces = Regex.Replace(withSpaces, @"\bH P\b", "HP");
+    withSpaces = Regex.Replace(withSpaces, @"\bD C\b", "DC");
+    
     return withSpaces.Trim();
+}
+
+void ExtractBlueprintItemTypes(string blueprintsDir, Dictionary<string, string> blueprintTypes, Dictionary<string, string> blueprintNames)
+{
+    int typesFound = 0;
+    int namesUpdated = 0;
+
+    // Get all subdirectories that contain item blueprints
+    var itemDirs = new[]
+    {
+        "Kingmaker.Blueprints.Items.BlueprintItem",
+        "Kingmaker.Blueprints.Items.Weapons.BlueprintItemWeapon",
+        "Kingmaker.Blueprints.Items.Armors.BlueprintItemArmor",
+        "Kingmaker.Blueprints.Items.Shields.BlueprintItemShield",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipment",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentUsable",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentBelt",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentFeet",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentGloves",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentHead",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentNeck",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentRing",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentShirt",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentShoulders",
+        "Kingmaker.Blueprints.Items.Equipment.BlueprintItemEquipmentWrist",
+        "Kingmaker.Blueprints.Items.BlueprintItemNote"
+    };
+
+    foreach (var dirName in itemDirs)
+    {
+        var itemDir = Path.Combine(blueprintsDir, dirName);
+        if (!Directory.Exists(itemDir))
+            continue;
+
+        foreach (var jsonFile in Directory.GetFiles(itemDir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(jsonFile);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                // Extract GUID from filename (format: Name.GUID.json)
+                var fileName = Path.GetFileNameWithoutExtension(jsonFile);
+                var parts = fileName.Split('.');
+                if (parts.Length >= 2)
+                {
+                    var guid = parts[parts.Length - 1];
+                    
+                    // Look for $type field
+                    if (root.TryGetProperty("$type", out var typeElement))
+                    {
+                        var typeString = typeElement.GetString();
+                        if (!string.IsNullOrEmpty(typeString))
+                        {
+                            // Format: "Kingmaker.Blueprints.Items.BlueprintItem, Assembly-CSharp"
+                            // We want to extract just the class name
+                            var typeParts = typeString.Split(',');
+                            if (typeParts.Length > 0)
+                            {
+                                var fullTypeName = typeParts[0].Trim();
+                                // Extract just the class name from the full namespace
+                                var classNameParts = fullTypeName.Split('.');
+                                var className = classNameParts[classNameParts.Length - 1];
+                                
+                                blueprintTypes[guid] = className;
+                                typesFound++;
+                            }
+                        }
+                    }
+                    
+                    // Look for m_DisplayNameText field and extract actual name
+                    if (root.TryGetProperty("m_DisplayNameText", out var displayNameElement))
+                    {
+                        var displayNameString = displayNameElement.GetString();
+                        if (!string.IsNullOrEmpty(displayNameString))
+                        {
+                            // Format: "LocalizedString:e817d587-b9bb-4162-a837-b4b40bb0ceff:Ancient Scrap of Script-Covered Leather"
+                            // or empty: "LocalizedString::"
+                            var displayParts = displayNameString.Split(':');
+                            if (displayParts.Length >= 3)
+                            {
+                                // Join all parts after the second colon (in case name contains colons)
+                                var displayName = string.Join(":", displayParts.Skip(2));
+                                if (!string.IsNullOrWhiteSpace(displayName))
+                                {
+                                    // Update the name in blueprintNames dictionary (overrides Blueprints.txt name)
+                                    blueprintNames[guid] = displayName;
+                                    namesUpdated++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Skip files that can't be parsed
+            }
+        }
+    }
+
+    Console.WriteLine($"  Extracted {typesFound} blueprint types from JSON files");
+    Console.WriteLine($"  Updated {namesUpdated} item names from m_DisplayNameText");
 }

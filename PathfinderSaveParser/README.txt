@@ -166,6 +166,7 @@ All text output is also displayed in the console.
 ✓ Character skills (all 11 skills with modifiers)
 ✓ Level-by-level feat and feature progression
 ✓ Equipment with enchantments (all 4 weapon sets, armor, accessories)
+✓ Equipment slot types displayed ([Ring], [Wrist], [Head], [Neck], [Belt], [Note])
 ✓ Active weapon set indicator (shows which set is currently equipped)
 ✓ Quick slots (potions, scrolls, wands, rods)
 ✓ Spellcasting information (spell slots per day and known spells)

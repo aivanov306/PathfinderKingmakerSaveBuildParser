@@ -7,8 +7,39 @@ namespace PathfinderSaveParser.Services;
 public class ItemCategorizationService
 {
     /// <summary>
-    /// Determines item category from JSON $type field (more reliable than name-based detection)
+    /// Determines item category from blueprint type (most reliable - from blueprint database)
     /// </summary>
+    public string? GetCategoryFromBlueprintType(string? blueprintType)
+    {
+        if (string.IsNullOrEmpty(blueprintType)) return null;
+
+        // Weapons
+        if (blueprintType.Equals("BlueprintItemWeapon", StringComparison.OrdinalIgnoreCase))
+            return "Weapon";
+
+        // Armor (including shields)
+        if (blueprintType.Equals("BlueprintItemArmor", StringComparison.OrdinalIgnoreCase) ||
+            blueprintType.Equals("BlueprintItemShield", StringComparison.OrdinalIgnoreCase))
+            return "Armor";
+
+        // Usables
+        if (blueprintType.Equals("BlueprintItemEquipmentUsable", StringComparison.OrdinalIgnoreCase))
+            return "Usable";
+
+        // Accessories (equipment items)
+        if (blueprintType.StartsWith("BlueprintItemEquipment", StringComparison.OrdinalIgnoreCase) &&
+            !blueprintType.Equals("BlueprintItemEquipmentUsable", StringComparison.OrdinalIgnoreCase))
+        {
+            // BlueprintItemEquipmentBelt, BlueprintItemEquipmentRing, BlueprintItemEquipmentHead, etc.
+            return "Accessories";
+        }
+
+        // Plain BlueprintItem - requires further categorization
+        return null;
+    }
+
+    /// <summary>
+    /// Determines item category from JSON $type field (second most reliable - from party.json)</summary>
     public string? GetCategoryFromJsonType(string? jsonType)
     {
         if (string.IsNullOrEmpty(jsonType)) return null;
