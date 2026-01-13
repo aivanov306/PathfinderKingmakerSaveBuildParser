@@ -108,7 +108,7 @@ public class JsonOutputModelsTests
         {
             Name = "Test Kingdom",
             Alignment = "Lawful Good",
-            Days = 100,
+            KingdomDays = 100,
             Gold = 5000,
             BuildPoints = 200
         };

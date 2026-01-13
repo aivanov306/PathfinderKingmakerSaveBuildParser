@@ -20,227 +20,256 @@ public class EquipmentParser
         _options = options;
     }
 
-    public string ParseEquipment(JToken? descriptor)
+    /// <summary>
+    /// Parse equipment data and return structured data object
+    /// </summary>
+    public EquipmentJson? ParseData(JToken? descriptor)
     {
-        var sb = new StringBuilder();
-        
-        // Check if descriptor is a valid object before accessing properties
         if (descriptor == null || !(descriptor is JObject descriptorObj))
-        {
-            return "";
-        }
+            return null;
 
-        // Get the Body reference and resolve it
         var bodyRef = descriptorObj["Body"];
-        
         if (bodyRef == null)
-        {
-            return "";
-        }
+            return null;
         
         var body = _resolver.Resolve(bodyRef);
+        if (body == null || body.Type == JTokenType.Null || !(body is JObject))
+            return null;
+
+        var equipment = new EquipmentJson();
+
+        // Parse all weapon sets
+        var sets = body["m_HandsEquipmentSets"];
+        var activeIndex = body["m_CurrentHandsEquipmentSetIndex"]?.Value<int>() ?? 0;
+        equipment.ActiveWeaponSetIndex = activeIndex;
         
-        if (body == null || body.Type == JTokenType.Null)
+        if (sets != null && sets.HasValues)
         {
-            return "";
+            var weaponSets = new List<WeaponSetJson>();
+            for (int i = 0; i < sets.Count(); i++)
+            {
+                var set = sets.ElementAtOrDefault(i);
+                if (set is JObject)
+                {
+                    var primaryRef = set["PrimaryHand"];
+                    var secondaryRef = set["SecondaryHand"];
+                    
+                    var mainHand = ParseEquipmentSlotData(primaryRef);
+                    var offHand = ParseEquipmentSlotData(secondaryRef);
+                    
+                    // Only add non-empty weapon sets
+                    if (mainHand != null || offHand != null)
+                    {
+                        weaponSets.Add(new WeaponSetJson
+                        {
+                            SetNumber = i + 1,
+                            MainHand = mainHand,
+                            OffHand = offHand
+                        });
+                    }
+                    
+                    // Keep legacy properties for backward compatibility (active set only)
+                    if (i == activeIndex)
+                    {
+                        equipment.MainHand = mainHand;
+                        equipment.OffHand = offHand;
+                    }
+                }
+            }
+            
+            if (weaponSets.Any())
+            {
+                equipment.WeaponSets = weaponSets;
+            }
         }
-        
-        if (!(body is JObject))
+
+        // Parse armor slots (note: keys are without "m_" prefix)
+        equipment.Body = ParseEquipmentSlotData(body["Armor"]);
+        equipment.Head = ParseEquipmentSlotData(body["Head"]);
+        equipment.Neck = ParseEquipmentSlotData(body["Neck"]);
+        equipment.Belt = ParseEquipmentSlotData(body["Belt"]);
+        equipment.Cloak = ParseEquipmentSlotData(body["Shoulders"]);
+        equipment.Ring1 = ParseEquipmentSlotData(body["Ring1"]);
+        equipment.Ring2 = ParseEquipmentSlotData(body["Ring2"]);
+        equipment.Bracers = ParseEquipmentSlotData(body["Wrist"]);
+        equipment.Gloves = ParseEquipmentSlotData(body["Gloves"]);
+        equipment.Boots = ParseEquipmentSlotData(body["Feet"]);
+
+        // Parse quick slots (potions, scrolls, rods, wands)
+        var quickSlots = body["m_QuickSlots"];
+        if (quickSlots != null && quickSlots.HasValues)
         {
-            return "";
+            var quickSlotsList = new List<EquipmentSlotJson>();
+            foreach (var slotRef in quickSlots)
+            {
+                var slot = ParseEquipmentSlotData(slotRef);
+                if (slot != null)
+                {
+                    quickSlotsList.Add(slot);
+                }
+            }
+            if (quickSlotsList.Any())
+            {
+                equipment.QuickSlots = quickSlotsList;
+            }
         }
-        
+
+        return equipment;
+    }
+
+    /// <summary>
+    /// Parse equipment and format as text report (uses ParseData internally)
+    /// </summary>
+    public string ParseEquipment(JToken? descriptor)
+    {
+        var data = ParseData(descriptor);
+        if (data == null)
+            return "";
+
+        var sb = new StringBuilder();
         sb.AppendLine("EQUIPMENT");
         sb.AppendLine(new string('=', 80));
         
-        // Parse active weapon set only
-        if (_options.IncludeActiveWeaponSet)
+        // Format active weapon set
+        if (_options.IncludeActiveWeaponSet && data.WeaponSets != null && data.WeaponSets.Any())
         {
-            ParseActiveWeaponSet(body, sb);
+            var activeSet = data.WeaponSets.FirstOrDefault(ws => ws.SetNumber == data.ActiveWeaponSetIndex + 1);
+            if (activeSet != null)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"Active Weapon Set (Set {activeSet.SetNumber}):");
+                sb.AppendLine($"  Main Hand:  {FormatEquipmentSlot(activeSet.MainHand)}");
+                sb.AppendLine($"  Off Hand:   {FormatEquipmentSlot(activeSet.OffHand)}");
+            }
         }
         
-        // Parse armor and accessories
+        // Format armor and accessories
         if (_options.IncludeArmor || _options.IncludeAccessories)
         {
-            ParseArmorAndAccessories(body, sb);
+            sb.AppendLine();
+            sb.AppendLine("Armor & Accessories:");
+            
+            var slots = new List<(string name, EquipmentSlotJson? slot, bool isArmor)>
+            {
+                ("Body", data.Body, true),
+                ("Head", data.Head, false),
+                ("Neck", data.Neck, false),
+                ("Belt", data.Belt, false),
+                ("Cloak", data.Cloak, false),
+                ("Ring 1", data.Ring1, false),
+                ("Ring 2", data.Ring2, false),
+                ("Bracers", data.Bracers, false),
+                ("Gloves", data.Gloves, false),
+                ("Boots", data.Boots, false)
+            };
+
+            foreach (var (name, slot, isArmor) in slots)
+            {
+                // Skip if armor is disabled and this is armor slot
+                if (isArmor && !_options.IncludeArmor) continue;
+                
+                // Skip if accessories are disabled and this is not armor slot
+                if (!isArmor && !_options.IncludeAccessories) continue;
+                
+                var itemInfo = FormatEquipmentSlot(slot);
+                
+                // Skip empty slots if ShowEmptySlots is false
+                if (!_options.ShowEmptySlots && itemInfo == "(empty)") continue;
+                
+                sb.AppendLine($"  {name,-10}: {itemInfo}");
+            }
         }
         
-        // Parse quick slots (potions, scrolls, rods, wands)
-        ParseQuickSlots(body, sb);
+        // Format quick slots
+        if (data.QuickSlots != null && data.QuickSlots.Any())
+        {
+            sb.AppendLine();
+            sb.AppendLine("Quick Slots (Potions, Scrolls, Rods, Wands):");
+            int slotNumber = 1;
+            foreach (var slot in data.QuickSlots)
+            {
+                var itemInfo = FormatEquipmentSlot(slot);
+                if (itemInfo != "(empty)")
+                {
+                    sb.AppendLine($"  Slot {slotNumber}: {itemInfo}");
+                }
+                slotNumber++;
+            }
+        }
         
         return sb.ToString();
     }
 
-    private void ParseActiveWeaponSet(JToken body, StringBuilder sb)
+    private string FormatEquipmentSlot(EquipmentSlotJson? slot)
     {
-        if (body == null || body.Type != JTokenType.Object) return;
+        if (slot == null || string.IsNullOrEmpty(slot.Name))
+            return "(empty)";
+
+        var result = slot.Name;
         
-        var sets = body["m_HandsEquipmentSets"];
-        var activeIndex = body["m_CurrentHandsEquipmentSetIndex"]?.Value<int>() ?? 0;
-        
-        if (sets != null && sets.HasValues && sets.Count() > activeIndex)
+        // Add equipment type if available
+        if (!string.IsNullOrEmpty(slot.Type))
         {
-            var activeSet = sets.ElementAtOrDefault(activeIndex);
-            
-            if (activeSet == null || !(activeSet is JObject)) return;
-            
-            sb.AppendLine();
-            sb.AppendLine($"Active Weapon Set (Set {activeIndex + 1}):");
-            
-            // Primary hand
-            var primaryRef = activeSet["PrimaryHand"];
-            var primary = GetItemFromSlot(primaryRef);
-            var primaryInfo = GetItemInfo(primary);
-            sb.AppendLine($"  Main Hand:  {primaryInfo}");
-            
-            // Secondary hand
-            var secondaryRef = activeSet["SecondaryHand"];
-            var secondary = GetItemFromSlot(secondaryRef);
-            var secondaryInfo = GetItemInfo(secondary);
-            sb.AppendLine($"  Off Hand:   {secondaryInfo}");
+            result = $"{result} [{slot.Type}]";
         }
+        
+        // Add enchantments if available and option is enabled
+        if (_options.ShowEnchantments && slot.Enchantments != null && slot.Enchantments.Any())
+        {
+            var enchantmentText = $"({string.Join(", ", slot.Enchantments)})";
+            result = $"{result} {enchantmentText}";
+        }
+        
+        return result;
     }
 
-    private void ParseArmorAndAccessories(JToken body, StringBuilder sb)
-    {
-        if (body == null || body.Type != JTokenType.Object) return;
-        
-        sb.AppendLine();
-        sb.AppendLine("Armor & Accessories:");
-        
-        var slots = new Dictionary<string, (string slotKey, string displayName, bool isArmor)>
-        {
-            { "Armor", ("Armor", "Body", true) },
-            { "Head", ("Head", "Head", false) },
-            { "Neck", ("Neck", "Neck", false) },
-            { "Belt", ("Belt", "Belt", false) },
-            { "Shoulders", ("Shoulders", "Cloak", false) },
-            { "Ring1", ("Ring1", "Ring 1", false) },
-            { "Ring2", ("Ring2", "Ring 2", false) },
-            { "Wrist", ("Wrist", "Bracers", false) },
-            { "Gloves", ("Gloves", "Gloves", false) },
-            { "Feet", ("Feet", "Boots", false) }
-        };
-
-        foreach (var slot in slots)
-        {
-            var (slotKey, displayName, isArmor) = slot.Value;
-            
-            // Skip if armor is disabled and this is armor slot
-            if (isArmor && !_options.IncludeArmor) continue;
-            
-            // Skip if accessories are disabled and this is not armor slot
-            if (!isArmor && !_options.IncludeAccessories) continue;
-            
-            var itemRef = body[slotKey];
-            var item = GetItemFromSlot(itemRef);
-            var itemInfo = GetItemInfo(item);
-            
-            // Skip empty slots if ShowEmptySlots is false
-            if (!_options.ShowEmptySlots && itemInfo == "(empty)") continue;
-            
-            sb.AppendLine($"  {displayName,-10}: {itemInfo}");
-        }
-    }
-
-    private void ParseQuickSlots(JToken body, StringBuilder sb)
-    {
-        if (body == null || body.Type != JTokenType.Object) return;
-        
-        var quickSlots = body["m_QuickSlots"];
-        if (quickSlots == null || !quickSlots.HasValues) return;
-        
-        var items = new List<string>();
-        int slotNumber = 1;
-        
-        foreach (var slotRef in quickSlots)
-        {
-            var item = GetItemFromSlot(slotRef);
-            if (item != null)
-            {
-                var itemInfo = GetItemInfo(item);
-                if (itemInfo != "(empty)")
-                {
-                    items.Add($"  Slot {slotNumber}: {itemInfo}");
-                }
-            }
-            slotNumber++;
-        }
-        
-        if (items.Any())
-        {
-            sb.AppendLine();
-            sb.AppendLine("Quick Slots (Potions, Scrolls, Rods, Wands):");
-            foreach (var item in items)
-            {
-                sb.AppendLine(item);
-            }
-        }
-    }
-
-    private JToken? GetItemFromSlot(JToken? slotRef)
+    /// <summary>
+    /// Parse equipment slot and return structured data
+    /// </summary>
+    private EquipmentSlotJson? ParseEquipmentSlotData(JToken? slotRef)
     {
         if (slotRef == null || slotRef.Type == JTokenType.Null)
-        {
-            return null; // Slot reference doesn't exist
-        }
-        
+            return null;
+
+        // Resolve the slot reference
         var slot = _resolver.Resolve(slotRef);
         if (slot == null || slot.Type == JTokenType.Null)
-        {
-            return null; // Slot is empty
-        }
-        
-        // Check if slot is a reference-only object (just has $ref) or actual slot object
+            return null;
+
+        // Check if slot has m_Item property (armor/accessory slots)
+        JToken? item = null;
         if (slot is JObject slotObj && slotObj.Property("m_Item") != null)
         {
             var itemRef = slotObj["m_Item"];
             if (itemRef == null || itemRef.Type == JTokenType.Null)
-            {
-                return null; // Slot exists but has no item
-            }
-            return _resolver.Resolve(itemRef);
+                return null; // Slot exists but is empty
+            
+            item = _resolver.Resolve(itemRef);
         }
-        
-        return null;
-    }
+        else
+        {
+            // For weapon slots, the slot reference directly points to the item
+            item = slot;
+        }
 
-    private string GetItemInfo(JToken? item)
-    {
-        // Item is null means slot is empty
-        if (item == null)
-        {
-            return "(empty)";
-        }
-        
-        // Item is not a JObject means we got unexpected data
-        if (!(item is JObject itemObj))
-        {
-            return "(empty)";
-        }
-        
+        if (item == null || item.Type == JTokenType.Null || !(item is JObject itemObj))
+            return null;
+
         var blueprintId = itemObj["m_Blueprint"]?.ToString();
-        
-        // If we can't get a blueprint ID, the item data is malformed
         if (string.IsNullOrEmpty(blueprintId))
-        {
-            return "(empty)";
-        }
-        
+            return null;
+
         var (itemName, equipmentType) = _blueprintLookup.GetNameAndType(blueprintId);
-        
-        // If blueprint lookup fails, show as unknown
         if (string.IsNullOrEmpty(itemName) || itemName.StartsWith("Blueprint_"))
+            return null;
+
+        var result = new EquipmentSlotJson
         {
-            return $"(unknown item: {blueprintId.Substring(0, Math.Min(8, blueprintId.Length))}...)";
-        }
-        
-        // Get enchantments if option is enabled
-        if (!_options.ShowEnchantments)
-        {
-            return itemName;
-        }
-        
+            Name = itemName,
+            Type = equipmentType
+        };
+
+        // Parse enchantments
         var enchantments = new List<string>();
         var enchantmentsRef = itemObj["m_Enchantments"];
         var enchantmentsObj = _resolver.Resolve(enchantmentsRef);
@@ -252,7 +281,6 @@ public class EquipmentParser
             {
                 foreach (var fact in facts)
                 {
-                    // Ensure fact is a JObject before accessing properties
                     if (!(fact is JObject)) continue;
                     
                     var enchantBlueprint = fact["Blueprint"]?.ToString();
@@ -260,8 +288,7 @@ public class EquipmentParser
                     {
                         var enchantName = _blueprintLookup.GetName(enchantBlueprint);
                         
-                        // Filter out redundant enhancement bonuses that are already in item name
-                        // (e.g., if item is "Flaming Longsword +2", skip "Enhancement Bonus +2")
+                        // Filter out redundant enhancement bonuses
                         if (ShouldIncludeEnchantment(enchantName, itemName))
                         {
                             enchantments.Add(enchantName);
@@ -273,22 +300,10 @@ public class EquipmentParser
         
         if (enchantments.Any())
         {
-            var enchantmentText = $"({string.Join(", ", enchantments)})";
-            // Add equipment type before enchantments if available
-            if (!string.IsNullOrEmpty(equipmentType))
-            {
-                return $"{itemName} [{equipmentType}] {enchantmentText}";
-            }
-            return $"{itemName} {enchantmentText}";
+            result.Enchantments = enchantments;
         }
-        
-        // Add equipment type if available and no enchantments
-        if (!string.IsNullOrEmpty(equipmentType))
-        {
-            return $"{itemName} [{equipmentType}]";
-        }
-        
-        return itemName;
+
+        return result;
     }
 
     private bool ShouldIncludeEnchantment(string enchantName, string itemName)

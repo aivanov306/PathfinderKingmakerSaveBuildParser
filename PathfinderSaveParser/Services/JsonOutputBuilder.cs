@@ -11,12 +11,16 @@ public class JsonOutputBuilder
     private readonly BlueprintLookupService _blueprintLookup;
     private readonly RefResolver? _resolver;
     private readonly ReportOptions _options;
+    private readonly ItemCategorizationService _categorization;
+    private readonly EquipmentParser _equipmentParser;
 
     public JsonOutputBuilder(BlueprintLookupService blueprintLookup, RefResolver? resolver = null, ReportOptions? options = null)
     {
         _blueprintLookup = blueprintLookup;
         _resolver = resolver;
         _options = options ?? new ReportOptions();
+        _categorization = new ItemCategorizationService();
+        _equipmentParser = new EquipmentParser(blueprintLookup, resolver ?? throw new ArgumentNullException(nameof(resolver)), _options);
     }
 
     public KingdomStatsJson? BuildKingdomJson(Kingdom? kingdom, int money, string? gameTime, int? bpPerTurnOverride)
@@ -101,9 +105,9 @@ public class JsonOutputBuilder
         return items;
     }
 
-    private List<(string blueprint, int count, List<string>? enchantments)> ParseItemsFromCollectionWithEnchantments(ItemCollection? collection)
+    private List<(string blueprint, int count, List<string>? enchantments, string? jsonType)> ParseItemsFromCollectionWithEnchantments(ItemCollection? collection)
     {
-        var items = new List<(string blueprint, int count, List<string>? enchantments)>();
+        var items = new List<(string blueprint, int count, List<string>? enchantments, string? jsonType)>();
         if (collection?.Items == null) return items;
 
         foreach (var item in collection.Items)
@@ -125,16 +129,16 @@ public class JsonOutputBuilder
                         }
                     }
                 }
-                items.Add((item.Blueprint, item.Count, enchantments.Any() ? enchantments : null));
+                items.Add((item.Blueprint, item.Count, enchantments.Any() ? enchantments : null, null)); // null jsonType for personal chest items
             }
         }
 
         return items;
     }
 
-    private List<(string blueprint, int count, List<string>? enchantments)> ParseItemsFromPartyWithEnchantments(JToken? partyJson)
+    private List<(string blueprint, int count, List<string>? enchantments, string? jsonType)> ParseItemsFromPartyWithEnchantments(JToken? partyJson)
     {
-        var items = new List<(string blueprint, int count, List<string>? enchantments)>();
+        var items = new List<(string blueprint, int count, List<string>? enchantments, string? jsonType)>();
         if (partyJson == null) return items;
 
         int totalItems = 0;
@@ -166,17 +170,17 @@ public class JsonOutputBuilder
 
                     var blueprint = item["m_Blueprint"]?.Value<string>();
                     var count = item["m_Count"]?.Value<int>() ?? 1;
+                    var jsonType = item["$type"]?.Value<string>(); // Get item type from JSON
 
                     if (!string.IsNullOrEmpty(blueprint))
                     {
-                        // Parse enchantments from m_Enchantments.m_Facts[] (same structure as personal chest)
+                        // Parse enchantments from m_Enchantments.m_Facts[]
                         var enchantments = new List<string>();
                         try
                         {
                             var enchantsToken = item["m_Enchantments"];
                             if (enchantsToken != null && enchantsToken.Type == JTokenType.Object)
                             {
-                                // Look for m_Facts array inside m_Enchantments
                                 var factsArray = enchantsToken["m_Facts"];
                                 
                                 if (factsArray != null && factsArray is JArray arr && arr.Any())
@@ -201,7 +205,7 @@ public class JsonOutputBuilder
                             // Ignore enchantment parsing errors
                         }
 
-                        items.Add((blueprint, count, enchantments.Any() ? enchantments : null));
+                        items.Add((blueprint, count, enchantments.Any() ? enchantments : null, jsonType));
                     }
                 }
                 catch
@@ -224,7 +228,7 @@ public class JsonOutputBuilder
         return items;
     }
 
-    private InventoryCollectionJson BuildInventoryCollectionJson(List<(string blueprint, int count, List<string>? enchantments)> items)
+    private InventoryCollectionJson BuildInventoryCollectionJson(List<(string blueprint, int count, List<string>? enchantments, string? jsonType)> items)
     {
         var collection = new InventoryCollectionJson
         {
@@ -236,7 +240,7 @@ public class JsonOutputBuilder
         };
 
         int skippedCount = 0;
-        foreach (var (blueprint, count, enchantments) in items)
+        foreach (var (blueprint, count, enchantments, jsonType) in items)
         {
             var name = _blueprintLookup.GetName(blueprint);
             if (name == blueprint)
@@ -254,13 +258,22 @@ public class JsonOutputBuilder
                 Enchantments = enchantments
             };
 
-            if (IsWeapon(type))
+            // Categorize using priority: 1) JSON $type (most reliable), 2) equipment type from database, 3) name-based fallback
+            var categoryFromType = _categorization.GetCategoryFromJsonType(jsonType);
+            
+            if (categoryFromType == "Weapon")
                 collection.Weapons!.Add(item);
-            else if (IsArmor(type))
+            else if (categoryFromType == "Armor")
                 collection.Armor!.Add(item);
-            else if (IsUsable(name))
+            else if (categoryFromType == "Usable")
                 collection.Usables!.Add(item);
-            else if (IsAccessory(name))
+            else if (_categorization.IsWeapon(type))
+                collection.Weapons!.Add(item);
+            else if (_categorization.IsArmor(type))
+                collection.Armor!.Add(item);
+            else if (_categorization.IsUsable(name))
+                collection.Usables!.Add(item);
+            else if (_categorization.IsAccessory(name))
                 collection.Accessories!.Add(item);
             else
                 collection.Other!.Add(item);
@@ -277,52 +290,6 @@ public class JsonOutputBuilder
         }
 
         return collection;
-    }
-
-    private bool IsWeapon(string? type)
-    {
-        if (string.IsNullOrEmpty(type)) return false;
-        var weaponTypes = new[]
-        {
-            "Longsword", "Shortsword", "Greatsword", "Bastard Sword", "Dueling Sword",
-            "Dagger", "Kukri", "Punching Dagger", "Sickle", "Starknife",
-            "Battleaxe", "Handaxe", "Greataxe", "Warhammer", "Light Hammer",
-            "Heavy Flail", "Light Flail", "Greatclub", "Club", "Heavy Mace", "Light Mace",
-            "Scimitar", "Falchion", "Falcata", "Rapier", "Estoc", "Sai",
-            "Glaive", "Scythe", "Bardiche", "Fauchard", "Nunchaku",
-            "Light Pick", "Heavy Pick", "Kama", "Trident", "Sling Staff",
-            "Quarterstaff", "Spear", "Longspear", "Javelin", "Earth Breaker",
-            "Shortbow", "Longbow", "Light Crossbow", "Heavy Crossbow",
-            "Dart", "Throwing Axe", "Sling",
-            "Composite Shortbow", "Composite Longbow"
-        };
-        return weaponTypes.Any(wt => type.Contains(wt, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private bool IsArmor(string? type)
-    {
-        if (string.IsNullOrEmpty(type)) return false;
-        var armorTypes = new[]
-        {
-            "Light Armor", "Medium Armor", "Heavy Armor",
-            "Buckler", "Light Shield", "Heavy Shield", "Tower Shield",
-            "Padded", "Leather", "Studded", "Chain Shirt", "Hide", "Scale Mail",
-            "Chainmail", "Breastplate", "Splint Mail", "Banded Mail", "Half-Plate", "Full Plate",
-            "Cloth"
-        };
-        return armorTypes.Any(at => type.Contains(at, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private bool IsAccessory(string name)
-    {
-        var keywords = new[] { "Amulet", "Belt", "Ring", "Bracers", "Cloak", "Headband", "Circlet", "Helmet", "Gloves", "Boots" };
-        return keywords.Any(k => name.Contains(k, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private bool IsUsable(string name)
-    {
-        var keywords = new[] { "Potion", "Scroll", "Elixir", "Extract", "Wand", "Oil of", "Antidote", "Antitoxin", "Holy Water", "Flask", "Alchemist", "Alchemists Fire" };
-        return keywords.Any(k => name.Contains(k, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool IsPositionAvailable(string? positionType, Kingdom kingdom)
@@ -658,168 +625,8 @@ public class JsonOutputBuilder
 
     private EquipmentJson? ParseEquipmentJson(JToken descriptor)
     {
-        if (_resolver == null) return null;
-
-        var bodyRef = descriptor["Body"];
-        if (bodyRef == null) return null;
-        
-        var body = _resolver.Resolve(bodyRef);
-        if (body == null || body.Type == JTokenType.Null)
-            return null; // Can't parse equipment without body reference
-
-        var equipment = new EquipmentJson();
-
-        // Parse all weapon sets
-        var sets = body["m_HandsEquipmentSets"];
-        var activeIndex = body["m_CurrentHandsEquipmentSetIndex"]?.Value<int>() ?? 0;
-        equipment.ActiveWeaponSetIndex = activeIndex;
-        
-        if (sets != null && sets.HasValues)
-        {
-            var weaponSets = new List<WeaponSetJson>();
-            for (int i = 0; i < sets.Count(); i++)
-            {
-                var set = sets.ElementAtOrDefault(i);
-                if (set is JObject)
-                {
-                    var primaryRef = set["PrimaryHand"];
-                    var secondaryRef = set["SecondaryHand"];
-                    
-                    var mainHand = ParseEquipmentSlotJson(primaryRef);
-                    var offHand = ParseEquipmentSlotJson(secondaryRef);
-                    
-                    // Only add non-empty weapon sets
-                    if (mainHand != null || offHand != null)
-                    {
-                        weaponSets.Add(new WeaponSetJson
-                        {
-                            SetNumber = i + 1,
-                            MainHand = mainHand,
-                            OffHand = offHand
-                        });
-                    }
-                    
-                    // Keep legacy properties for backward compatibility (active set only)
-                    if (i == activeIndex)
-                    {
-                        equipment.MainHand = mainHand;
-                        equipment.OffHand = offHand;
-                    }
-                }
-            }
-            
-            if (weaponSets.Any())
-            {
-                equipment.WeaponSets = weaponSets;
-            }
-        }
-
-        // Parse armor slots (note: keys are without "m_" prefix)
-        equipment.Body = ParseEquipmentSlotJson(body["Armor"]);
-        equipment.Head = ParseEquipmentSlotJson(body["Head"]);
-        equipment.Neck = ParseEquipmentSlotJson(body["Neck"]);
-        equipment.Belt = ParseEquipmentSlotJson(body["Belt"]);
-        equipment.Cloak = ParseEquipmentSlotJson(body["Shoulders"]);
-        equipment.Ring1 = ParseEquipmentSlotJson(body["Ring1"]);
-        equipment.Ring2 = ParseEquipmentSlotJson(body["Ring2"]);
-        equipment.Bracers = ParseEquipmentSlotJson(body["Wrist"]);
-        equipment.Gloves = ParseEquipmentSlotJson(body["Gloves"]);
-        equipment.Boots = ParseEquipmentSlotJson(body["Feet"]);
-
-        // Parse quick slots (potions, scrolls, rods, wands)
-        var quickSlots = body["m_QuickSlots"];
-        if (quickSlots != null && quickSlots.HasValues)
-        {
-            var quickSlotsList = new List<EquipmentSlotJson>();
-            foreach (var slotRef in quickSlots)
-            {
-                var slot = ParseEquipmentSlotJson(slotRef);
-                if (slot != null)
-                {
-                    quickSlotsList.Add(slot);
-                }
-            }
-            if (quickSlotsList.Any())
-            {
-                equipment.QuickSlots = quickSlotsList;
-            }
-        }
-
-        return equipment;
-    }
-
-    private EquipmentSlotJson? ParseEquipmentSlotJson(JToken? slotRef)
-    {
-        if (slotRef == null || slotRef.Type == JTokenType.Null || _resolver == null)
-            return null;
-
-        // Resolve the slot reference
-        var slot = _resolver.Resolve(slotRef);
-        if (slot == null || slot.Type == JTokenType.Null)
-            return null;
-
-        // Check if slot has m_Item property (armor/accessory slots)
-        JToken? item = null;
-        if (slot is JObject slotObj && slotObj.Property("m_Item") != null)
-        {
-            var itemRef = slotObj["m_Item"];
-            if (itemRef == null || itemRef.Type == JTokenType.Null)
-                return null; // Slot exists but is empty
-            
-            item = _resolver.Resolve(itemRef);
-        }
-        else
-        {
-            // For weapon slots, the slot reference directly points to the item
-            item = slot;
-        }
-
-        if (item == null || item.Type == JTokenType.Null)
-            return null;
-
-        var blueprintId = item["m_Blueprint"]?.ToString(); // NOTE: it's "m_Blueprint" not "Blueprint"!
-        if (string.IsNullOrEmpty(blueprintId)) return null;
-
-        var itemName = _blueprintLookup.GetName(blueprintId);
-        if (string.IsNullOrEmpty(itemName) || itemName == "None") return null;
-
-        var enchantments = new List<string>();
-        var enchantmentsRef = item["m_Enchantments"];
-        if (enchantmentsRef != null)
-        {
-            var enchantmentsObj = _resolver.Resolve(enchantmentsRef);
-            if (enchantmentsObj != null && enchantmentsObj is JObject enchantmentsJObj)
-            {
-                var facts = enchantmentsJObj["m_Facts"];
-                if (facts != null && facts.HasValues)
-                {
-                    foreach (var fact in facts)
-                    {
-                        if (!(fact is JObject)) continue;
-                        
-                        var enchBlueprintId = fact["Blueprint"]?.ToString();
-                        if (!string.IsNullOrEmpty(enchBlueprintId))
-                        {
-                            var enchName = _blueprintLookup.GetName(enchBlueprintId);
-                            if (!string.IsNullOrEmpty(enchName) && enchName != "None")
-                            {
-                                enchantments.Add(enchName);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Get item type from blueprint
-        string? itemType = _blueprintLookup.GetEquipmentType(blueprintId);
-
-        return new EquipmentSlotJson
-        {
-            Name = itemName,
-            Type = itemType,
-            Enchantments = enchantments.Any() ? enchantments : null
-        };
+        // Delegate to EquipmentParser which now has a ParseData method
+        return _equipmentParser.ParseData(descriptor);
     }
 
     private List<SpellbookJson>? ParseSpellbooksJson(JToken descriptor)

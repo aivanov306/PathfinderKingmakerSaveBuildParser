@@ -157,7 +157,7 @@ public class CompleteWorkflowTests
         {
             Name = "Test Kingdom",
             Alignment = "Lawful Good",
-            Days = 365,
+            KingdomDays = 365,
             Gold = 10000,
             BuildPoints = 500,
             BuildPointsPerTurn = 10,
@@ -194,7 +194,7 @@ public class CompleteWorkflowTests
             Kingdom = new KingdomStatsJson
             {
                 Name = "My Kingdom",
-                Days = 100,
+                KingdomDays = 100,
                 Gold = 5000
             },
             Characters = new List<CharacterJson>

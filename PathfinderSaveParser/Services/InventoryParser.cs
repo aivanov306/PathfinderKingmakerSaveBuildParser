@@ -10,10 +10,12 @@ namespace PathfinderSaveParser.Services;
 public class InventoryParser
 {
     private readonly BlueprintLookupService _blueprintLookup;
+    private readonly ItemCategorizationService _categorization;
 
-    public InventoryParser(BlueprintLookupService blueprintLookup)
+    public InventoryParser(BlueprintLookupService blueprintLookup, ItemCategorizationService categorizationService)
     {
         _blueprintLookup = blueprintLookup;
+        _categorization = categorizationService;
     }
 
     public string ParseBothInventories(ItemCollection? personalChest, JToken? partyJson)
@@ -128,14 +130,13 @@ public class InventoryParser
 
                     if (!string.IsNullOrEmpty(blueprint))
                     {
-                        // Parse enchantments from m_Enchantments.m_Facts[] (same structure as personal chest)
+                        // Parse enchantments from m_Enchantments.m_Facts[]
                         var enchantments = new List<string>();
                         try
                         {
                             var enchantsToken = item["m_Enchantments"];
                             if (enchantsToken != null && enchantsToken.Type == JTokenType.Object)
                             {
-                                // Look for m_Facts array inside m_Enchantments
                                 var factsArray = enchantsToken["m_Facts"];
                                 
                                 if (factsArray != null && factsArray is JArray arr && arr.Any())
@@ -195,20 +196,20 @@ public class InventoryParser
 
             var equipmentType = _blueprintLookup.GetEquipmentType(blueprint);
 
-            // Categorize items (order matters: check specific types first)
-            if (IsWeapon(equipmentType))
+            // Categorize items based on equipment type from database, with fallbacks
+            if (_categorization.IsWeapon(equipmentType) || (string.IsNullOrEmpty(equipmentType) && _categorization.IsWeaponByName(itemName)))
             {
                 weapons.Add((itemName, equipmentType, count, enchantments));
             }
-            else if (IsArmor(equipmentType))
+            else if (_categorization.IsArmor(equipmentType) || (string.IsNullOrEmpty(equipmentType) && _categorization.IsArmorByName(itemName)))
             {
                 armor.Add((itemName, equipmentType, count, enchantments));
             }
-            else if (IsUsable(itemName))
+            else if (_categorization.IsUsable(itemName))
             {
                 usables.Add((itemName, count));
             }
-            else if (IsAccessory(itemName))
+            else if (_categorization.IsAccessory(itemName))
             {
                 accessories.Add((itemName, count, enchantments));
             }
@@ -289,64 +290,5 @@ public class InventoryParser
         sb.AppendLine(new string('-', 80));
         sb.AppendLine($"Total: {totalItems} items ({totalUniqueItems} unique)");
         sb.AppendLine();
-    }
-
-    private bool IsWeapon(string? type)
-    {
-        if (string.IsNullOrEmpty(type)) return false;
-
-        var weaponTypes = new[]
-        {
-            "Longsword", "Shortsword", "Greatsword", "Bastard Sword", "Dueling Sword",
-            "Dagger", "Kukri", "Punching Dagger", "Sickle", "Starknife",
-            "Battleaxe", "Handaxe", "Greataxe", "Warhammer", "Light Hammer",
-            "Heavy Flail", "Light Flail", "Flail", "Greatclub", "Club", "Heavy Mace", "Light Mace",
-            "Scimitar", "Falchion", "Rapier", "Estoc", "Sai",
-            "Glaive", "Scythe", "Bardiche", "Fauchard", "Nunchaku",
-            "Light Pick", "Heavy Pick", "Kama", "Trident", "Sling Staff",
-            "Quarterstaff", "Spear", "Longspear", "Javelin",
-            "Shortbow", "Longbow", "Light Crossbow", "Heavy Crossbow",
-            "Dart", "Javelin", "Throwing Axe", "Sling",
-            "Composite Shortbow", "Composite Longbow"
-        };
-
-        return weaponTypes.Any(wt => type.Contains(wt, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private bool IsArmor(string? type)
-    {
-        if (string.IsNullOrEmpty(type)) return false;
-
-        var armorTypes = new[]
-        {
-            "Light Armor", "Medium Armor", "Heavy Armor",
-            "Buckler", "Light Shield", "Heavy Shield", "Tower Shield",
-            "Cloth"
-        };
-
-        return armorTypes.Any(at => type.Equals(at, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private bool IsAccessory(string name)
-    {
-        var accessoryKeywords = new[]
-        {
-            "Amulet", "Belt", "Ring", "Bracers", "Cloak", "Headband",
-            "Circlet", "Helmet", "Gloves", "Boots"
-        };
-
-        return accessoryKeywords.Any(keyword => name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private bool IsUsable(string name)
-    {
-        var usableKeywords = new[]
-        {
-            "Potion", "Scroll", "Elixir", "Extract", "Wand",
-            "Oil of ", "Antidote", "Antitoxin", "Holy Water",
-            "Flask", "Alchemist", "Alchemists Fire"
-        };
-
-        return usableKeywords.Any(keyword => name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
     }
 }
