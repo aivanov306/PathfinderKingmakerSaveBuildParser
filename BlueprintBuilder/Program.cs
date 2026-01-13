@@ -104,6 +104,10 @@ ExtractEquipmentTypes(blueprintsDir, equipmentTypes);
 Console.WriteLine("\nExtracting blueprint item types and display names from JSON files...");
 ExtractBlueprintItemTypes(blueprintsDir, blueprintItemTypes, blueprintNames);
 
+// Extract spell and feature display names from JSON files
+Console.WriteLine("\nExtracting spell and feature display names from JSON files...");
+ExtractSpellAndFeatureNames(blueprintsDir, blueprintNames);
+
 // Determine output path: PathfinderSaveParser folder if exists, otherwise current directory
 var parserProjectPath = Path.Combine(solutionRootFullPath, "PathfinderSaveParser");
 string outputPath;
@@ -517,4 +521,74 @@ void ExtractBlueprintItemTypes(string blueprintsDir, Dictionary<string, string> 
 
     Console.WriteLine($"  Extracted {typesFound} blueprint types from JSON files");
     Console.WriteLine($"  Updated {namesUpdated} item names from m_DisplayNameText");
+}
+
+void ExtractSpellAndFeatureNames(string blueprintsDir, Dictionary<string, string> blueprintNames)
+{
+    int namesUpdated = 0;
+
+    // Get all subdirectories that contain spells, abilities, and features
+    var featureDirs = new[]
+    {
+        "Kingmaker.Blueprints.Classes.Spells.BlueprintAbility",
+        "Kingmaker.UnitLogic.Abilities.Blueprints.BlueprintAbility",
+        "Kingmaker.Blueprints.Classes.BlueprintFeature",
+        "Kingmaker.Blueprints.Classes.BlueprintProgression",
+        "Kingmaker.Blueprints.Facts.BlueprintUnitFact",
+        "Kingmaker.Designers.EventConditionActionSystem.NamedParameters.BlueprintParametrizedFeature"
+    };
+
+    foreach (var dirName in featureDirs)
+    {
+        var featureDir = Path.Combine(blueprintsDir, dirName);
+        if (!Directory.Exists(featureDir))
+            continue;
+
+        foreach (var jsonFile in Directory.GetFiles(featureDir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(jsonFile);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                // Extract GUID from filename (format: Name.GUID.json)
+                var fileName = Path.GetFileNameWithoutExtension(jsonFile);
+                var parts = fileName.Split('.');
+                if (parts.Length >= 2)
+                {
+                    var guid = parts[parts.Length - 1];
+                    
+                    // Look for m_DisplayName field and extract actual name
+                    if (root.TryGetProperty("m_DisplayName", out var displayNameElement))
+                    {
+                        var displayNameString = displayNameElement.GetString();
+                        if (!string.IsNullOrEmpty(displayNameString))
+                        {
+                            // Format: "LocalizedString:470b70c4-b182-4ed8-be47-01784ee25663:Summon Monster III"
+                            // or empty: "LocalizedString::"
+                            var displayParts = displayNameString.Split(':');
+                            if (displayParts.Length >= 3)
+                            {
+                                // Join all parts after the second colon (in case name contains colons)
+                                var displayName = string.Join(":", displayParts.Skip(2));
+                                if (!string.IsNullOrWhiteSpace(displayName))
+                                {
+                                    // Update the name in blueprintNames dictionary (overrides Blueprints.txt name)
+                                    blueprintNames[guid] = displayName;
+                                    namesUpdated++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Skip files that can't be parsed
+            }
+        }
+    }
+
+    Console.WriteLine($"  Updated {namesUpdated} spell and feature names from m_DisplayName");
 }
