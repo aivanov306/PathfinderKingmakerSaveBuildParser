@@ -2,6 +2,27 @@
 
 A maintainable C# application designed to parse and export Pathfinder: Kingmaker save files, extracting character build history and kingdom statistics.
 
+## Recent Enhancements
+
+### Enhanced Display Names (v2.2)
+- **Item Names**: 2,362 item names extracted from blueprint `m_DisplayNameText` field
+- **Spell/Ability Names**: 3,720 spell and ability names from `m_DisplayName` field
+  - Example: "Summon Monster III" instead of "Summon Monster I I I Base"
+- **Enchantment Names**: 212 enchantment names from `m_EnchantName` field
+  - Example: "Composite" instead of "Strength Composite"
+- **Location Names**: 244 location names extracted from blueprint `Name` field
+  - Example: "Waterlogged Lowland" instead of "Location G M B E Forgotten Cache"
+- **Item Descriptions**: 771 item descriptions from `m_DescriptionText` field
+  - Displays full item descriptions in inventory.txt and all_characters.txt
+  - Controlled via `ShowItemDescriptions` setting in appsettings.json (default: false)
+  - Example: "This +3 composite longbow grants its wielder a +5 luck bonus to Stealth skill checks..."
+- **Equipment Type Display**: Accessories and notes show slot types
+  - Accessories: [Ring], [Wrist], [Head], [Neck], [Belt], [Shoulders], [Gloves], [Feet]
+  - Notes: [Note]
+- **Bug Fix**: Notes now correctly categorized in "Other" section (not "Usables")
+
+All display names now match the in-game text, making the output more readable and accurate.
+
 ## Features
 
 ### Character Build Analysis
@@ -48,6 +69,11 @@ A maintainable C# application designed to parse and export Pathfinder: Kingmaker
   - Total item count and unique item count summary per inventory
   - Sorted alphabetically within each category
   - Excludes equipped items (only shows unequipped inventory)
+  - **Enhanced Display Names**: 
+    - 2,362 item names extracted from blueprint `m_DisplayNameText` field
+    - 3,720 spell/ability names, 212 enchantment names, 244 location names
+    - 771 item descriptions available (controlled via ShowItemDescriptions setting)
+    - Shows actual in-game display names (e.g., "Composite" instead of "Strength Composite")
 - **Unrest Level**: Current unrest status
 - **Kingdom Stats**: All 10 kingdom statistics with both value and rank:
   - Community, Loyalty, Military, Economy, Relations
@@ -176,6 +202,7 @@ Control what information is included in generated reports:
   "ShowEmptySlots": true,            // Display empty equipment slots
   "ShowEnchantments": true,          // Show item enchantments in parentheses
   "ShowFeatParameters": true,        // Show weapon types/schools in feat names
+  "ShowItemDescriptions": false,     // Show item descriptions (inventory + equipment)
   "IncludeSpellcasting": true        // Show spell slots and available/known spells
 }
 ```
@@ -483,8 +510,11 @@ The parser extracts complete builds for:
 The application uses a comprehensive blueprint database (`blueprint_database.json`) with 45,632+ blueprint names and 2,400+ equipment types extracted from the game files. This database is automatically loaded at startup.
 
 **Database Structure:**
-- `Names`: Dictionary mapping blueprint GUIDs to readable names (45,632 entries)
+- `Names`: Dictionary mapping blueprint GUIDs to readable names (47,022 entries)
+  - Includes 2,362 item names, 3,720 spell/ability names, 212 enchantment names, 244 location names
 - `EquipmentTypes`: Dictionary mapping equipment GUIDs to weapon/armor/shield types (2,406 entries)
+- `BlueprintTypes`: Dictionary mapping blueprint GUIDs to type classifications (4,134 entries)
+- `Descriptions`: Dictionary mapping item GUIDs to descriptions (771 entries)
 
 To regenerate the blueprint database (e.g., after a game update):
 
@@ -512,6 +542,11 @@ To regenerate the blueprint database (e.g., after a game update):
 - Extracts weapon types from `BlueprintItemWeapon` JSON files
 - Extracts armor types from `BlueprintItemArmor` JSON files  
 - Extracts shield types from `BlueprintItemShield` JSON files (via armor component references)
+- Extracts item display names from `m_DisplayNameText` field (2,362 items)
+- Extracts spell/ability names from `m_DisplayName` field (3,720 entries)
+- Extracts enchantment names from `m_EnchantName` field (212 entries)
+- Extracts location names from `Name` field (244 locations)
+- Extracts item descriptions from `m_DescriptionText` field (771 descriptions)
 
 ### Extending the Parser
 

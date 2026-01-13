@@ -11,11 +11,13 @@ public class InventoryParser
 {
     private readonly BlueprintLookupService _blueprintLookup;
     private readonly ItemCategorizationService _categorization;
+    private readonly ReportOptions _options;
 
-    public InventoryParser(BlueprintLookupService blueprintLookup, ItemCategorizationService categorizationService)
+    public InventoryParser(BlueprintLookupService blueprintLookup, ItemCategorizationService categorizationService, ReportOptions options)
     {
         _blueprintLookup = blueprintLookup;
         _categorization = categorizationService;
+        _options = options;
     }
 
     public string ParseBothInventories(ItemCollection? personalChest, JToken? partyJson)
@@ -183,11 +185,11 @@ public class InventoryParser
     private void AppendCategorizedItems(StringBuilder sb, List<(string blueprint, int count, List<string>? enchantments)> items)
     {
         // Group items by category
-        var weapons = new List<(string name, string? type, int count, List<string>? enchantments)>();
-        var armor = new List<(string name, string? type, int count, List<string>? enchantments)>();
-        var accessories = new List<(string name, int count, List<string>? enchantments)>();
-        var usables = new List<(string name, int count)>();
-        var other = new List<(string name, int count)>();
+        var weapons = new List<(string blueprint, string name, string? type, int count, List<string>? enchantments)>();
+        var armor = new List<(string blueprint, string name, string? type, int count, List<string>? enchantments)>();
+        var accessories = new List<(string blueprint, string name, int count, List<string>? enchantments)>();
+        var usables = new List<(string blueprint, string name, int count)>();
+        var other = new List<(string blueprint, string name, int count)>();
 
         foreach (var (blueprint, count, enchantments) in items)
         {
@@ -202,39 +204,43 @@ public class InventoryParser
             
             if (categoryFromBlueprint == "Weapon")
             {
-                weapons.Add((itemName, equipmentType, count, enchantments));
+                weapons.Add((blueprint, itemName, equipmentType, count, enchantments));
             }
             else if (categoryFromBlueprint == "Armor")
             {
-                armor.Add((itemName, equipmentType, count, enchantments));
+                armor.Add((blueprint, itemName, equipmentType, count, enchantments));
             }
             else if (categoryFromBlueprint == "Usable")
             {
-                usables.Add((itemName, count));
+                usables.Add((blueprint, itemName, count));
             }
             else if (categoryFromBlueprint == "Accessories")
             {
-                accessories.Add((itemName, count, enchantments));
+                accessories.Add((blueprint, itemName, count, enchantments));
+            }
+            else if (categoryFromBlueprint == "Other")
+            {
+                other.Add((blueprint, itemName, count));
             }
             else if (_categorization.IsWeapon(equipmentType) || (string.IsNullOrEmpty(equipmentType) && _categorization.IsWeaponByName(itemName)))
             {
-                weapons.Add((itemName, equipmentType, count, enchantments));
+                weapons.Add((blueprint, itemName, equipmentType, count, enchantments));
             }
             else if (_categorization.IsArmor(equipmentType) || (string.IsNullOrEmpty(equipmentType) && _categorization.IsArmorByName(itemName)))
             {
-                armor.Add((itemName, equipmentType, count, enchantments));
+                armor.Add((blueprint, itemName, equipmentType, count, enchantments));
             }
             else if (_categorization.IsUsable(itemName))
             {
-                usables.Add((itemName, count));
+                usables.Add((blueprint, itemName, count));
             }
             else if (_categorization.IsAccessory(itemName))
             {
-                accessories.Add((itemName, count, enchantments));
+                accessories.Add((blueprint, itemName, count, enchantments));
             }
             else
             {
-                other.Add((itemName, count));
+                other.Add((blueprint, itemName, count));
             }
         }
 
@@ -242,12 +248,22 @@ public class InventoryParser
         if (weapons.Count > 0)
         {
             sb.AppendLine("WEAPONS:");
-            foreach (var (name, type, count, enchantments) in weapons.OrderBy(w => w.name))
+            foreach (var (blueprint, name, type, count, enchantments) in weapons.OrderBy(w => w.name))
             {
                 var countStr = count > 1 ? $" x{count}" : "";
                 var typeStr = !string.IsNullOrEmpty(type) ? $" [{type}]" : "";
                 var enchantStr = enchantments != null && enchantments.Any() ? $" ({string.Join(", ", enchantments)})" : "";
                 sb.AppendLine($"  {name}{typeStr}{enchantStr}{countStr}");
+                
+                if (_options.ShowItemDescriptions)
+                {
+                    var description = _blueprintLookup.GetDescription(blueprint);
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        sb.AppendLine($"     {description}");
+                        sb.AppendLine();
+                    }
+                }
             }
             sb.AppendLine();
         }
@@ -256,12 +272,22 @@ public class InventoryParser
         if (armor.Count > 0)
         {
             sb.AppendLine("ARMOR & SHIELDS:");
-            foreach (var (name, type, count, enchantments) in armor.OrderBy(a => a.name))
+            foreach (var (blueprint, name, type, count, enchantments) in armor.OrderBy(a => a.name))
             {
                 var countStr = count > 1 ? $" x{count}" : "";
                 var typeStr = !string.IsNullOrEmpty(type) ? $" [{type}]" : "";
                 var enchantStr = enchantments != null && enchantments.Any() ? $" ({string.Join(", ", enchantments)})" : "";
                 sb.AppendLine($"  {name}{typeStr}{enchantStr}{countStr}");
+                
+                if (_options.ShowItemDescriptions)
+                {
+                    var description = _blueprintLookup.GetDescription(blueprint);
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        sb.AppendLine($"     {description}");
+                        sb.AppendLine();
+                    }
+                }
             }
             sb.AppendLine();
         }
@@ -270,11 +296,21 @@ public class InventoryParser
         if (accessories.Count > 0)
         {
             sb.AppendLine("ACCESSORIES (Belts, Amulets, Rings, etc.):");
-            foreach (var (name, count, enchantments) in accessories.OrderBy(a => a.name))
+            foreach (var (blueprint, name, count, enchantments) in accessories.OrderBy(a => a.name))
             {
                 var countStr = count > 1 ? $" x{count}" : "";
                 var enchantStr = enchantments != null && enchantments.Any() ? $" ({string.Join(", ", enchantments)})" : "";
                 sb.AppendLine($"  {name}{enchantStr}{countStr}");
+                
+                if (_options.ShowItemDescriptions)
+                {
+                    var description = _blueprintLookup.GetDescription(blueprint);
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        sb.AppendLine($"     {description}");
+                        sb.AppendLine();
+                    }
+                }
             }
             sb.AppendLine();
         }
@@ -283,10 +319,20 @@ public class InventoryParser
         if (usables.Count > 0)
         {
             sb.AppendLine("USABLES (Potions, Scrolls, Flasks, etc.):");
-            foreach (var (name, count) in usables.OrderBy(u => u.name))
+            foreach (var (blueprint, name, count) in usables.OrderBy(u => u.name))
             {
                 var countStr = count > 1 ? $" x{count}" : "";
                 sb.AppendLine($"  {name}{countStr}");
+                
+                if (_options.ShowItemDescriptions)
+                {
+                    var description = _blueprintLookup.GetDescription(blueprint);
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        sb.AppendLine($"     {description}");
+                        sb.AppendLine();
+                    }
+                }
             }
             sb.AppendLine();
         }
@@ -295,10 +341,20 @@ public class InventoryParser
         if (other.Count > 0)
         {
             sb.AppendLine("OTHER ITEMS:");
-            foreach (var (name, count) in other.OrderBy(o => o.name))
+            foreach (var (blueprint, name, count) in other.OrderBy(o => o.name))
             {
                 var countStr = count > 1 ? $" x{count}" : "";
                 sb.AppendLine($"  {name}{countStr}");
+                
+                if (_options.ShowItemDescriptions)
+                {
+                    var description = _blueprintLookup.GetDescription(blueprint);
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        sb.AppendLine($"     {description}");
+                        sb.AppendLine();
+                    }
+                }
             }
             sb.AppendLine();
         }

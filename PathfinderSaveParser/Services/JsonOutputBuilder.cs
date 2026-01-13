@@ -255,12 +255,16 @@ public class JsonOutputBuilder
             // Extract slot type from blueprint type for accessories and notes
             var displayType = GetDisplayType(blueprintType, type);
             
+            // Get description if ShowItemDescriptions is enabled
+            var description = _options.ShowItemDescriptions ? _blueprintLookup.GetDescription(blueprint) : null;
+            
             var item = new InventoryItemJson
             {
                 Name = name,
                 Type = displayType,
                 Count = count,
-                Enchantments = enchantments
+                Enchantments = enchantments,
+                Description = description
             };
 
             // Categorize using priority: 1) Blueprint type (most reliable), 2) JSON $type, 3) equipment type, 4) name-based fallback
@@ -275,6 +279,8 @@ public class JsonOutputBuilder
                 collection.Usables!.Add(item);
             else if (categoryFromBlueprint == "Accessories")
                 collection.Accessories!.Add(item);
+            else if (categoryFromBlueprint == "Other")
+                collection.Other!.Add(item);
             else if (categoryFromJsonType == "Weapon")
                 collection.Weapons!.Add(item);
             else if (categoryFromJsonType == "Armor")

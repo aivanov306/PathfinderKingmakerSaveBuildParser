@@ -206,7 +206,7 @@ class Program
             var blueprintLookup = new BlueprintLookupService();
             var itemCategorization = new ItemCategorizationService();
             var kingdomParser = new KingdomStatsParser(blueprintLookup, reportOptions);
-            var inventoryParser = new InventoryParser(blueprintLookup, itemCategorization);
+            var inventoryParser = new InventoryParser(blueprintLookup, itemCategorization, reportOptions);
             
             // Create RefResolver for party.json
             Console.WriteLine("Indexing party.json references...");
@@ -366,7 +366,7 @@ class Program
             // Generate all text files using TextFileGenerator service
             Console.WriteLine();
             Console.WriteLine("Generating text output files...");
-            var textFileGenerator = new TextFileGenerator(outputDir);
+            var textFileGenerator = new TextFileGenerator(outputDir, reportOptions);
             await textFileGenerator.GenerateAllTextFilesAsync(currentState);
             Console.WriteLine("Text files saved successfully.");
 

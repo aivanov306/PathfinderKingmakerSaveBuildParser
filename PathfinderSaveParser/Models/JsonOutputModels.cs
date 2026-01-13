@@ -80,6 +80,7 @@ public class InventoryItemJson
     public string? Type { get; set; }
     public int Count { get; set; }
     public List<string>? Enchantments { get; set; }
+    public string? Description { get; set; }
 }
 
 /// <summary>
@@ -181,6 +182,7 @@ public class EquipmentSlotJson
     public string? Name { get; set; }
     public string? Type { get; set; }
     public List<string>? Enchantments { get; set; }
+    public string? Description { get; set; }
 }
 
 /// <summary>

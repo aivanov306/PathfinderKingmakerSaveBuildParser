@@ -6,10 +6,12 @@ namespace PathfinderSaveParser.Services;
 public class TextFileGenerator
 {
     private readonly string _outputDir;
+    private readonly ReportOptions _options;
 
-    public TextFileGenerator(string outputDir)
+    public TextFileGenerator(string outputDir, ReportOptions options)
     {
         _outputDir = outputDir;
+        _options = options;
     }
 
     public async Task GenerateAllTextFilesAsync(CurrentStateJson currentState)
@@ -416,6 +418,13 @@ public class TextFileGenerator
                 itemLine += $" (x{item.Count})";
             }
             sb.AppendLine(itemLine);
+            
+            // Add description if enabled and available
+            if (_options.ShowItemDescriptions && !string.IsNullOrEmpty(item.Description))
+            {
+                sb.AppendLine($"    {item.Description}");
+                sb.AppendLine();
+            }
         }
         sb.AppendLine();
     }
@@ -434,6 +443,12 @@ public class TextFileGenerator
         if (slot.Enchantments != null && slot.Enchantments.Any())
         {
             result += $" ({string.Join(", ", slot.Enchantments)})";
+        }
+        
+        // Add description on new line if enabled
+        if (_options.ShowItemDescriptions && !string.IsNullOrEmpty(slot.Description))
+        {
+            result += $"\n      {slot.Description}";
         }
         
         return result;

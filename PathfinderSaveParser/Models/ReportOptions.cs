@@ -27,6 +27,7 @@ public class ReportOptions
     public bool IncludeAccessories { get; set; } = true;
     public bool ShowEmptySlots { get; set; } = true;
     public bool ShowEnchantments { get; set; } = true;
+    public bool ShowItemDescriptions { get; set; } = false;
     
     // Feature/Feat Options
     public bool ShowFeatParameters { get; set; } = true;

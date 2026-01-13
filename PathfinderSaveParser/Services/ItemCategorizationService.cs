@@ -26,6 +26,10 @@ public class ItemCategorizationService
         if (blueprintType.Equals("BlueprintItemEquipmentUsable", StringComparison.OrdinalIgnoreCase))
             return "Usable";
 
+        // Notes
+        if (blueprintType.Equals("BlueprintItemNote", StringComparison.OrdinalIgnoreCase))
+            return "Other";
+
         // Accessories (equipment items)
         if (blueprintType.StartsWith("BlueprintItemEquipment", StringComparison.OrdinalIgnoreCase) &&
             !blueprintType.Equals("BlueprintItemEquipmentUsable", StringComparison.OrdinalIgnoreCase))

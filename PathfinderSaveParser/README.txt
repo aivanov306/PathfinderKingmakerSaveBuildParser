@@ -92,6 +92,7 @@ Control what information appears in generated reports:
   "ShowEmptySlots": true,            // Display empty equipment slots
   "ShowEnchantments": true,          // Show item enchantments
   "ShowFeatParameters": true,        // Show weapon types in feats
+  "ShowItemDescriptions": false,     // Show item descriptions (inventory + equipment)
   "IncludeSpellcasting": true        // Spell slots and available spells
 }
 
@@ -167,6 +168,7 @@ All text output is also displayed in the console.
 ✓ Level-by-level feat and feature progression
 ✓ Equipment with enchantments (all 4 weapon sets, armor, accessories)
 ✓ Equipment slot types displayed ([Ring], [Wrist], [Head], [Neck], [Belt], [Note])
+✓ Item descriptions (771 available, controlled via ShowItemDescriptions setting)
 ✓ Active weapon set indicator (shows which set is currently equipped)
 ✓ Quick slots (potions, scrolls, wands, rods)
 ✓ Spellcasting information (spell slots per day and known spells)
@@ -174,13 +176,15 @@ All text output is also displayed in the console.
 ✓ Kingdom advisors (shows assignments and availability)
 ✓ Gold tracking (displays current party gold)
 ✓ Inventory listing (personal chest + shared party inventory)
-✓ Explored locations (all discovered map locations)
+✓ Explored locations (244 location names extracted from blueprint files)
 ✓ Kingdom settlements (built buildings by region with artisan details)
 ✓ Artisan tracking (building unlock status, tiers, production timeline, item types)
 ✓ Character ordering (customize output order)
 ✓ Character exclusion (hide specific characters)
 ✓ Support for main character + all companions
-✓ Automatic blueprint name resolution (45,632+ entries)
+✓ Automatic blueprint name resolution (47,022+ entries)
+  - 2,362 item names, 3,720 spell/ability names, 212 enchantments, 244 locations
+  - 2,406 equipment types, 4,134 blueprint types, 771 descriptions
 ✓ JSON export (structured data output for all game state)
 
 

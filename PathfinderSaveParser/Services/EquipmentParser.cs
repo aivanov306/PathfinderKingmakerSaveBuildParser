@@ -263,10 +263,14 @@ public class EquipmentParser
         if (string.IsNullOrEmpty(itemName) || itemName.StartsWith("Blueprint_"))
             return null;
 
+        // Get description if ShowItemDescriptions is enabled
+        var description = _options.ShowItemDescriptions ? _blueprintLookup.GetDescription(blueprintId) : null;
+
         var result = new EquipmentSlotJson
         {
             Name = itemName,
-            Type = equipmentType
+            Type = equipmentType,
+            Description = description
         };
 
         // Parse enchantments

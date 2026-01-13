@@ -17,6 +17,9 @@ var equipmentTypes = new Dictionary<string, string>();
 // Store blueprint item types from JSON $type field
 var blueprintItemTypes = new Dictionary<string, string>();
 
+// Store blueprint descriptions from JSON m_DescriptionText field
+var blueprintDescriptions = new Dictionary<string, string>();
+
 // Look for any folder starting with "Blueprints" in the parent directory (solution root)
 var currentDir = Directory.GetCurrentDirectory();
 
@@ -101,12 +104,20 @@ Console.WriteLine("\nExtracting equipment type information from JSON files...");
 ExtractEquipmentTypes(blueprintsDir, equipmentTypes);
 
 // Extract blueprint item types and display names from all JSON files
-Console.WriteLine("\nExtracting blueprint item types and display names from JSON files...");
-ExtractBlueprintItemTypes(blueprintsDir, blueprintItemTypes, blueprintNames);
+Console.WriteLine("\nExtracting blueprint item types, display names, and descriptions from JSON files...");
+ExtractBlueprintItemTypes(blueprintsDir, blueprintItemTypes, blueprintNames, blueprintDescriptions);
 
 // Extract spell and feature display names from JSON files
 Console.WriteLine("\nExtracting spell and feature display names from JSON files...");
 ExtractSpellAndFeatureNames(blueprintsDir, blueprintNames);
+
+// Extract enchantment display names from JSON files
+Console.WriteLine("\nExtracting enchantment display names from JSON files...");
+ExtractEnchantmentNames(blueprintsDir, blueprintNames);
+
+// Extract location names from JSON files
+Console.WriteLine("\nExtracting location names from JSON files...");
+ExtractLocationNames(blueprintsDir, blueprintNames);
 
 // Determine output path: PathfinderSaveParser folder if exists, otherwise current directory
 var parserProjectPath = Path.Combine(solutionRootFullPath, "PathfinderSaveParser");
@@ -128,12 +139,13 @@ var fullPath = Path.GetFullPath(outputPath);
 // Ensure the directory exists
 Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
 
-// Create combined database with both dictionaries
+// Create combined database with all dictionaries
 var database = new
 {
     Names = blueprintNames,
     EquipmentTypes = equipmentTypes,
-    BlueprintTypes = blueprintItemTypes
+    BlueprintTypes = blueprintItemTypes,
+    Descriptions = blueprintDescriptions
 };
 
 var jsonContent = JsonSerializer.Serialize(database, new JsonSerializerOptions { WriteIndented = true });
@@ -143,6 +155,7 @@ Console.WriteLine($"  - {fullPath}");
 Console.WriteLine($"\nTotal blueprints: {blueprintNames.Count}");
 Console.WriteLine($"Equipment types: {equipmentTypes.Count}");
 Console.WriteLine($"Blueprint types: {blueprintItemTypes.Count}");
+Console.WriteLine($"Descriptions: {blueprintDescriptions.Count}");
 Console.WriteLine("\nPress any key to exit...");
 Console.ReadKey();
 
@@ -419,10 +432,11 @@ string NormalizeBlueprintName(string name)
     return withSpaces.Trim();
 }
 
-void ExtractBlueprintItemTypes(string blueprintsDir, Dictionary<string, string> blueprintTypes, Dictionary<string, string> blueprintNames)
+void ExtractBlueprintItemTypes(string blueprintsDir, Dictionary<string, string> blueprintTypes, Dictionary<string, string> blueprintNames, Dictionary<string, string> blueprintDescriptions)
 {
     int typesFound = 0;
     int namesUpdated = 0;
+    int descriptionsExtracted = 0;
 
     // Get all subdirectories that contain item blueprints
     var itemDirs = new[]
@@ -510,6 +524,28 @@ void ExtractBlueprintItemTypes(string blueprintsDir, Dictionary<string, string> 
                             }
                         }
                     }
+                    
+                    // Look for m_DescriptionText field and extract description
+                    if (root.TryGetProperty("m_DescriptionText", out var descriptionElement))
+                    {
+                        var descriptionString = descriptionElement.GetString();
+                        if (!string.IsNullOrEmpty(descriptionString))
+                        {
+                            // Format: "LocalizedString:5d2caef0-b096-4160-b375-c0f1df075e00:This +3 composite longbow..."
+                            // or empty: "LocalizedString::"
+                            var descParts = descriptionString.Split(':');
+                            if (descParts.Length >= 3)
+                            {
+                                // Join all parts after the second colon (in case description contains colons)
+                                var description = string.Join(":", descParts.Skip(2));
+                                if (!string.IsNullOrWhiteSpace(description))
+                                {
+                                    blueprintDescriptions[guid] = description;
+                                    descriptionsExtracted++;
+                                }
+                            }
+                        }
+                    }
                 }
             }
             catch
@@ -521,6 +557,7 @@ void ExtractBlueprintItemTypes(string blueprintsDir, Dictionary<string, string> 
 
     Console.WriteLine($"  Extracted {typesFound} blueprint types from JSON files");
     Console.WriteLine($"  Updated {namesUpdated} item names from m_DisplayNameText");
+    Console.WriteLine($"  Extracted {descriptionsExtracted} item descriptions from m_DescriptionText");
 }
 
 void ExtractSpellAndFeatureNames(string blueprintsDir, Dictionary<string, string> blueprintNames)
@@ -591,4 +628,133 @@ void ExtractSpellAndFeatureNames(string blueprintsDir, Dictionary<string, string
     }
 
     Console.WriteLine($"  Updated {namesUpdated} spell and feature names from m_DisplayName");
+}
+
+void ExtractEnchantmentNames(string blueprintsDir, Dictionary<string, string> blueprintNames)
+{
+    int namesUpdated = 0;
+
+    // Get all subdirectories that contain enchantments
+    var enchantmentDirs = new[]
+    {
+        "Kingmaker.Blueprints.Items.Ecnchantments.BlueprintEquipmentEnchantment",
+        "Kingmaker.Blueprints.Items.Ecnchantments.BlueprintWeaponEnchantment",
+        "Kingmaker.Blueprints.Items.Ecnchantments.BlueprintArmorEnchantment",
+        "Kingmaker.Blueprints.Items.Ecnchantments.BlueprintShieldEnchantment",
+        "Kingmaker.Blueprints.Items.Ecnchantments.BlueprintItemEnchantment"
+    };
+
+    foreach (var dirName in enchantmentDirs)
+    {
+        var enchantmentDir = Path.Combine(blueprintsDir, dirName);
+        if (!Directory.Exists(enchantmentDir))
+            continue;
+
+        foreach (var jsonFile in Directory.GetFiles(enchantmentDir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(jsonFile);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                // Extract GUID from filename (format: Name.GUID.json)
+                var fileName = Path.GetFileNameWithoutExtension(jsonFile);
+                var parts = fileName.Split('.');
+                if (parts.Length >= 2)
+                {
+                    var guid = parts[parts.Length - 1];
+                    
+                    // Look for m_EnchantName field and extract actual name
+                    if (root.TryGetProperty("m_EnchantName", out var enchantNameElement))
+                    {
+                        var enchantNameString = enchantNameElement.GetString();
+                        if (!string.IsNullOrEmpty(enchantNameString))
+                        {
+                            // Format: "LocalizedString:8f87e480-fc62-46d8-94c6-6c97fe41d502:Composite"
+                            // or empty: "LocalizedString::"
+                            var displayParts = enchantNameString.Split(':');
+                            if (displayParts.Length >= 3)
+                            {
+                                // Join all parts after the second colon (in case name contains colons)
+                                var displayName = string.Join(":", displayParts.Skip(2));
+                                if (!string.IsNullOrWhiteSpace(displayName))
+                                {
+                                    // Update the name in blueprintNames dictionary (overrides Blueprints.txt name)
+                                    blueprintNames[guid] = displayName;
+                                    namesUpdated++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Skip files that can't be parsed
+            }
+        }
+    }
+
+    Console.WriteLine($"  Updated {namesUpdated} enchantment names from m_EnchantName");
+}
+
+void ExtractLocationNames(string blueprintsDir, Dictionary<string, string> blueprintNames)
+{
+    int namesUpdated = 0;
+
+    // Process location blueprints
+    var locationDir = Path.Combine(blueprintsDir, "Kingmaker.Globalmap.Blueprints.BlueprintLocation");
+    if (!Directory.Exists(locationDir))
+    {
+        Console.WriteLine($"  Location directory not found: {locationDir}");
+        return;
+    }
+
+    foreach (var jsonFile in Directory.GetFiles(locationDir, "*.json"))
+    {
+        try
+        {
+            var json = File.ReadAllText(jsonFile);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            // Extract GUID from filename (format: Name.GUID.json)
+            var fileName = Path.GetFileNameWithoutExtension(jsonFile);
+            var parts = fileName.Split('.');
+            if (parts.Length >= 2)
+            {
+                var guid = parts[parts.Length - 1];
+                
+                // Look for Name field and extract actual name
+                if (root.TryGetProperty("Name", out var nameElement))
+                {
+                    var nameString = nameElement.GetString();
+                    if (!string.IsNullOrEmpty(nameString))
+                    {
+                        // Format: "LocalizedString:5d076c0f-eba3-4f28-9a8b-72c2ce224174:Waterlogged Lowland"
+                        // or empty: "LocalizedString::"
+                        var nameParts = nameString.Split(':');
+                        if (nameParts.Length >= 3)
+                        {
+                            // Join all parts after the second colon (in case name contains colons)
+                            var locationName = string.Join(":", nameParts.Skip(2));
+                            if (!string.IsNullOrWhiteSpace(locationName))
+                            {
+                                // Update the name in blueprintNames dictionary (overrides Blueprints.txt name)
+                                blueprintNames[guid] = locationName;
+                                namesUpdated++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Skip files that can't be parsed
+        }
+    }
+
+    Console.WriteLine($"  Updated {namesUpdated} location names from Name field");
 }
