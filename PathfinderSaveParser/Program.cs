@@ -274,9 +274,21 @@ class Program
                 characterReports = characterReports
                     .OrderBy(cr => 
                     {
-                        var orderIndex = characterDisplayOrder.FindIndex(pattern => 
-                            cr.CharacterName.Contains(pattern, StringComparison.OrdinalIgnoreCase));
-                        return orderIndex == -1 ? int.MaxValue : orderIndex;
+                        // Find the best matching pattern (prefer the last matching pattern in the list)
+                        var bestMatchIndex = -1;
+                        for (int i = 0; i < characterDisplayOrder.Count; i++)
+                        {
+                            var pattern = characterDisplayOrder[i];
+                            if (cr.CharacterName.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
+                            {
+                                bestMatchIndex = i; // Use StartsWith match, but keep looking for later matches
+                            }
+                            else if (cr.CharacterName.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                            {
+                                bestMatchIndex = i; // Use Contains match, keep looking for later/better matches
+                            }
+                        }
+                        return bestMatchIndex == -1 ? int.MaxValue : bestMatchIndex;
                     })
                     .ThenBy(cr => cr.CharacterName)
                     .ToList();
@@ -334,9 +346,22 @@ class Program
                 allCharactersJson = allCharactersJson
                     .OrderBy(c => 
                     {
-                        var orderIndex = characterDisplayOrder.FindIndex(pattern => 
-                            (c.Name ?? "").Contains(pattern, StringComparison.OrdinalIgnoreCase));
-                        return orderIndex == -1 ? int.MaxValue : orderIndex;
+                        // Find the best matching pattern (prefer the last matching pattern in the list)
+                        var bestMatchIndex = -1;
+                        for (int i = 0; i < characterDisplayOrder.Count; i++)
+                        {
+                            var pattern = characterDisplayOrder[i];
+                            var name = c.Name ?? "";
+                            if (name.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
+                            {
+                                bestMatchIndex = i; // Use StartsWith match, but keep looking for later matches
+                            }
+                            else if (name.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                            {
+                                bestMatchIndex = i; // Use Contains match, keep looking for later/better matches
+                            }
+                        }
+                        return bestMatchIndex == -1 ? int.MaxValue : bestMatchIndex;
                     })
                     .ThenBy(c => c.Name)
                     .ToList();
