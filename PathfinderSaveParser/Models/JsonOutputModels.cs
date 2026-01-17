@@ -194,6 +194,7 @@ public class SpellbookJson
     public int CasterLevel { get; set; }
     public Dictionary<int, int>? SpellSlotsPerDay { get; set; }
     public Dictionary<int, List<string>>? KnownSpells { get; set; }
+    public List<int>? DomainSlotLevels { get; set; } // Spell levels that have domain/special slots
 }
 
 /// <summary>

@@ -701,6 +701,24 @@ public class JsonOutputBuilder
             var knownSpells = spellbook["m_KnownSpells"];
             var specialSpells = spellbook["m_SpecialSpells"];
             
+            // Track which spell levels have domain slots
+            var domainSlotLevels = new List<int>();
+            if (specialSpells != null && specialSpells.HasValues)
+            {
+                for (int i = 0; i < specialSpells.Count(); i++)
+                {
+                    var levelSpells = specialSpells.ElementAtOrDefault(i);
+                    if (levelSpells != null && levelSpells.HasValues && levelSpells.Any())
+                    {
+                        domainSlotLevels.Add(i);
+                    }
+                }
+            }
+            if (domainSlotLevels.Any())
+            {
+                spellbookJson.DomainSlotLevels = domainSlotLevels;
+            }
+            
             int maxLevel = Math.Max(
                 knownSpells?.Count() ?? 0,
                 specialSpells?.Count() ?? 0

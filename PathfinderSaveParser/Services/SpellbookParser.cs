@@ -87,6 +87,28 @@ public class SpellbookParser
         return false;
     }
 
+    private HashSet<int> HasDomainSpellsAtLevel(JToken spellbook)
+    {
+        var result = new HashSet<int>();
+        var specialSpells = spellbook["m_SpecialSpells"];
+        
+        if (specialSpells == null || !specialSpells.HasValues)
+            return result;
+
+        int level = 0;
+        foreach (var levelSpells in specialSpells)
+        {
+            if (levelSpells != null && levelSpells.HasValues && levelSpells.Any())
+            {
+                // This level has domain/special spells
+                result.Add(level);
+            }
+            level++;
+        }
+
+        return result;
+    }
+
     private void ParseSpontaneousSlots(JToken spellbook, StringBuilder sb)
     {
         var spontaneousSlots = spellbook["m_SpontaneousSlots"];
@@ -100,9 +122,20 @@ public class SpellbookParser
 
         if (slots.Any())
         {
+            var hasDomainSpells = HasDomainSpellsAtLevel(spellbook);
+            
             foreach (var slot in slots)
             {
-                sb.AppendLine($"  Level {slot.Level}: {slot.Count} slot{(slot.Count != 1 ? "s" : "")}");
+                if (hasDomainSpells.Contains(slot.Level) && slot.Count > 1)
+                {
+                    // Show domain slot separately
+                    var baseSlots = slot.Count - 1;
+                    sb.AppendLine($"  Level {slot.Level}: {baseSlots} slot{(baseSlots != 1 ? "s" : "")} + 1 domain slot");
+                }
+                else
+                {
+                    sb.AppendLine($"  Level {slot.Level}: {slot.Count} slot{(slot.Count != 1 ? "s" : "")}");
+                }
             }
         }
         else
@@ -136,9 +169,20 @@ public class SpellbookParser
 
         if (slotCounts.Any())
         {
+            var hasDomainSpells = HasDomainSpellsAtLevel(spellbook);
+            
             foreach (var (slotLevel, count) in slotCounts)
             {
-                sb.AppendLine($"  Level {slotLevel}: {count} slot{(count != 1 ? "s" : "")}");
+                if (hasDomainSpells.Contains(slotLevel) && count > 1)
+                {
+                    // Show domain slot separately
+                    var baseSlots = count - 1;
+                    sb.AppendLine($"  Level {slotLevel}: {baseSlots} slot{(baseSlots != 1 ? "s" : "")} + 1 domain slot");
+                }
+                else
+                {
+                    sb.AppendLine($"  Level {slotLevel}: {count} slot{(count != 1 ? "s" : "")}");
+                }
             }
         }
         else

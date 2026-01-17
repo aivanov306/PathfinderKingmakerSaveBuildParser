@@ -218,7 +218,21 @@ public class TextFileGenerator
                         foreach (var level in spellbook.SpellSlotsPerDay.Keys.OrderBy(k => k))
                         {
                             var slots = spellbook.SpellSlotsPerDay[level];
-                            sb.AppendLine($"      Level {level}: {slots} slots");
+                            
+                            // Check if this level has domain slots
+                            var hasDomainSlot = spellbook.DomainSlotLevels != null && 
+                                              spellbook.DomainSlotLevels.Contains(level);
+                            
+                            if (hasDomainSlot && slots > 1)
+                            {
+                                // Display separated: "5 slots + 1 domain slot"
+                                var baseSlots = slots - 1;
+                                sb.AppendLine($"      Level {level}: {baseSlots} slots + 1 domain slot");
+                            }
+                            else
+                            {
+                                sb.AppendLine($"      Level {level}: {slots} slots");
+                            }
                         }
                     }
                     
