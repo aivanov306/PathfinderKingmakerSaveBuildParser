@@ -78,6 +78,10 @@ public class TextFileGenerator
             sb.AppendLine($"=== {character.Name} ===");
             sb.AppendLine();
             sb.AppendLine($"Race: {character.Race}");
+            if (!string.IsNullOrEmpty(character.Alignment))
+            {
+                sb.AppendLine($"Alignment: {character.Alignment}");
+            }
             
             if (character.Classes != null && character.Classes.Any())
             {
@@ -321,20 +325,6 @@ public class TextFileGenerator
                     {
                         sb.AppendLine($"      Current Production:");
                         foreach (var item in artisan.CurrentProduction)
-                        {
-                            var itemLine = $"        - {item.Name}";
-                            if (!string.IsNullOrEmpty(item.Type))
-                                itemLine += $" [{item.Type}]";
-                            if (item.Enchantments != null && item.Enchantments.Any())
-                                itemLine += $" ({string.Join(", ", item.Enchantments)})";
-                            sb.AppendLine(itemLine);
-                        }
-                    }
-                    
-                    if (artisan.PreviousItems != null && artisan.PreviousItems.Any())
-                    {
-                        sb.AppendLine($"      Previous Items:");
-                        foreach (var item in artisan.PreviousItems)
                         {
                             var itemLine = $"        - {item.Name}";
                             if (!string.IsNullOrEmpty(item.Type))

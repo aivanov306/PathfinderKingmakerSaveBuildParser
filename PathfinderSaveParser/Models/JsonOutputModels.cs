@@ -90,6 +90,7 @@ public class CharacterJson
 {
     public string? Name { get; set; }
     public string? Race { get; set; }
+    public string? Alignment { get; set; }
     public List<ClassInfoJson>? Classes { get; set; }
     public AttributesJson? Attributes { get; set; }
     public SkillsJson? Skills { get; set; }

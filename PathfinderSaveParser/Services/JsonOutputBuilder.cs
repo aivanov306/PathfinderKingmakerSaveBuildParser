@@ -13,14 +13,16 @@ public class JsonOutputBuilder
     private readonly ReportOptions _options;
     private readonly ItemCategorizationService _categorization;
     private readonly EquipmentParser _equipmentParser;
+    private readonly string? _mainCharacterUniqueId;
 
-    public JsonOutputBuilder(BlueprintLookupService blueprintLookup, RefResolver? resolver = null, ReportOptions? options = null)
+    public JsonOutputBuilder(BlueprintLookupService blueprintLookup, RefResolver? resolver = null, ReportOptions? options = null, string? mainCharacterUniqueId = null)
     {
         _blueprintLookup = blueprintLookup;
         _resolver = resolver;
         _options = options ?? new ReportOptions();
         _categorization = new ItemCategorizationService();
         _equipmentParser = new EquipmentParser(blueprintLookup, resolver ?? throw new ArgumentNullException(nameof(resolver)), _options);
+        _mainCharacterUniqueId = mainCharacterUniqueId;
     }
 
     public KingdomStatsJson? BuildKingdomJson(Kingdom? kingdom, int money, string? gameTime, int? bpPerTurnOverride)
@@ -492,6 +494,31 @@ public class JsonOutputBuilder
         if (!string.IsNullOrEmpty(raceId))
         {
             character.Race = _blueprintLookup.GetName(raceId);
+        }
+
+        // Get alignment - use first entry for main character, last entry for companions
+        var alignmentObj = descriptor["Alignment"];
+        if (alignmentObj != null)
+        {
+            var history = alignmentObj["m_History"];
+            if (history != null && history.HasValues)
+            {
+                // Check if this is the main character by comparing unique IDs
+                var unitUniqueId = unit["UniqueId"]?.ToString();
+                bool isMainCharacter = !string.IsNullOrEmpty(_mainCharacterUniqueId) && 
+                                      !string.IsNullOrEmpty(unitUniqueId) && 
+                                      unitUniqueId.Equals(_mainCharacterUniqueId, StringComparison.OrdinalIgnoreCase);
+                
+                // Main character uses starting alignment, companions use current alignment
+                var alignmentEntry = isMainCharacter ? history.First() : history.Last();
+                var direction = alignmentEntry?["Direction"]?.ToString();
+                if (!string.IsNullOrEmpty(direction))
+                {
+                    // Format alignment: "LawfulGood" -> "Lawful Good"
+                    character.Alignment = System.Text.RegularExpressions.Regex.Replace(
+                        direction, "([a-z])([A-Z])", "$1 $2");
+                }
+            }
         }
 
         // Get classes
