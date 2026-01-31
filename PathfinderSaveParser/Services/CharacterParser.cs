@@ -302,13 +302,27 @@ public class EnhancedCharacterParser
                 sb.AppendLine("EQUIPMENT");
                 sb.AppendLine(new string('=', 80));
                 
-                // Format active weapon set
+                // Format weapon sets
                 if (_options.IncludeActiveWeaponSet && character.Equipment.WeaponSets != null && character.Equipment.WeaponSets.Any())
                 {
-                    var activeSet = character.Equipment.WeaponSets.FirstOrDefault(ws => ws.SetNumber == character.Equipment.ActiveWeaponSetIndex + 1);
-                    if (activeSet != null)
+                    sb.AppendLine();
+                    
+                    // Show all weapon sets if enabled and there are multiple sets
+                    if (_options.IncludeAllWeaponSets && character.Equipment.WeaponSets.Count > 1)
                     {
-                        sb.AppendLine();
+                        sb.AppendLine("Weapon Sets:");
+                        foreach (var weaponSet in character.Equipment.WeaponSets.OrderBy(ws => ws.SetNumber))
+                        {
+                            var activeMarker = weaponSet.SetNumber == character.Equipment.ActiveWeaponSetIndex + 1 ? " (Active)" : "";
+                            sb.AppendLine($"  Set {weaponSet.SetNumber}{activeMarker}:");
+                            sb.AppendLine($"    Main Hand:  {FormatEquipmentSlot(weaponSet.MainHand)}");
+                            sb.AppendLine($"    Off Hand:   {FormatEquipmentSlot(weaponSet.OffHand)}");
+                        }
+                    }
+                    else
+                    {
+                        // Show only active weapon set
+                        var activeSet = character.Equipment.WeaponSets.FirstOrDefault(ws => ws.SetNumber == character.Equipment.ActiveWeaponSetIndex + 1) ?? character.Equipment.WeaponSets.First();
                         sb.AppendLine($"Active Weapon Set (Set {activeSet.SetNumber}):");
                         sb.AppendLine($"  Main Hand:  {FormatEquipmentSlot(activeSet.MainHand)}");
                         sb.AppendLine($"  Off Hand:   {FormatEquipmentSlot(activeSet.OffHand)}");
