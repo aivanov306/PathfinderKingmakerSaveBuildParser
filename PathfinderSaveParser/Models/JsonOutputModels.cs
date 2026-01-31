@@ -96,6 +96,7 @@ public class CharacterJson
     public SkillsJson? Skills { get; set; }
     public EquipmentJson? Equipment { get; set; }
     public List<SpellbookJson>? Spellbooks { get; set; }
+    public string? FormattedSpellcasting { get; set; }  // Full formatted text from SpellbookParser
     public List<LevelProgressionJson>? LevelProgression { get; set; }
 }
 

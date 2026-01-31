@@ -214,7 +214,7 @@ class Program
             // Create RefResolver for party.json
             Console.WriteLine("Indexing party.json references...");
             var partyResolver = new RefResolver(partyJson);
-            var enhancedParser = new EnhancedCharacterParser(blueprintLookup, partyResolver, reportOptions);
+            var enhancedParser = new EnhancedCharacterParser(blueprintLookup, partyResolver, reportOptions, mainCharacterUniqueId);
             var jsonBuilder = new JsonOutputBuilder(blueprintLookup, partyResolver, reportOptions, mainCharacterUniqueId);
             Console.WriteLine("Reference indexing complete.");
             Console.WriteLine();
@@ -394,7 +394,7 @@ class Program
             // Generate all text files using TextFileGenerator service
             Console.WriteLine();
             Console.WriteLine("Generating text output files...");
-            var textFileGenerator = new TextFileGenerator(outputDir, reportOptions);
+            var textFileGenerator = new TextFileGenerator(outputDir, reportOptions, enhancedParser);
             await textFileGenerator.GenerateAllTextFilesAsync(currentState);
             Console.WriteLine("Text files saved successfully.");
 

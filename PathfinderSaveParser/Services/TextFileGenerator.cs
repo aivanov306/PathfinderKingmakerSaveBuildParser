@@ -7,11 +7,13 @@ public class TextFileGenerator
 {
     private readonly string _outputDir;
     private readonly ReportOptions _options;
+    private readonly EnhancedCharacterParser _characterFormatter;
 
-    public TextFileGenerator(string outputDir, ReportOptions options)
+    public TextFileGenerator(string outputDir, ReportOptions options, EnhancedCharacterParser characterFormatter)
     {
         _outputDir = outputDir;
         _options = options;
+        _characterFormatter = characterFormatter;
     }
 
     public async Task GenerateAllTextFilesAsync(CurrentStateJson currentState)
@@ -75,204 +77,8 @@ public class TextFileGenerator
 
         foreach (var character in characters)
         {
-            sb.AppendLine($"=== {character.Name} ===");
-            sb.AppendLine();
-            sb.AppendLine($"Race: {character.Race}");
-            if (!string.IsNullOrEmpty(character.Alignment))
-            {
-                sb.AppendLine($"Alignment: {character.Alignment}");
-            }
-            
-            if (character.Classes != null && character.Classes.Any())
-            {
-                sb.AppendLine("Classes:");
-                foreach (var cls in character.Classes)
-                {
-                    var line = $"  {cls.ClassName} (Level {cls.Level})";
-                    if (!string.IsNullOrEmpty(cls.Archetype))
-                    {
-                        line += $" - {cls.Archetype}";
-                    }
-                    sb.AppendLine(line);
-                }
-                sb.AppendLine();
-            }
-
-            if (character.Attributes != null)
-            {
-                sb.AppendLine("Attributes (base values + level-up allocated points, without racial/class/item/size modifiers):");
-                sb.AppendLine($"  Strength:     {character.Attributes.Strength}");
-                sb.AppendLine($"  Dexterity:    {character.Attributes.Dexterity}");
-                sb.AppendLine($"  Constitution: {character.Attributes.Constitution}");
-                sb.AppendLine($"  Intelligence: {character.Attributes.Intelligence}");
-                sb.AppendLine($"  Wisdom:       {character.Attributes.Wisdom}");
-                sb.AppendLine($"  Charisma:     {character.Attributes.Charisma}");
-                sb.AppendLine();
-            }
-
-            if (character.Skills != null)
-            {
-                sb.AppendLine("Skills (allocated points, without racial/class/item/size modifiers):");
-                if (character.Skills.Mobility.HasValue)
-                    sb.AppendLine($"  {"Mobility",-25} {character.Skills.Mobility.Value,3}");
-                if (character.Skills.Athletics.HasValue)
-                    sb.AppendLine($"  {"Athletics",-25} {character.Skills.Athletics.Value,3}");
-                if (character.Skills.Stealth.HasValue)
-                    sb.AppendLine($"  {"Stealth",-25} {character.Skills.Stealth.Value,3}");
-                if (character.Skills.Thievery.HasValue)
-                    sb.AppendLine($"  {"Thievery",-25} {character.Skills.Thievery.Value,3}");
-                if (character.Skills.KnowledgeArcana.HasValue)
-                    sb.AppendLine($"  {"Knowledge (Arcana)",-25} {character.Skills.KnowledgeArcana.Value,3}");
-                if (character.Skills.KnowledgeWorld.HasValue)
-                    sb.AppendLine($"  {"Knowledge (World)",-25} {character.Skills.KnowledgeWorld.Value,3}");
-                if (character.Skills.LoreNature.HasValue)
-                    sb.AppendLine($"  {"Lore (Nature)",-25} {character.Skills.LoreNature.Value,3}");
-                if (character.Skills.LoreReligion.HasValue)
-                    sb.AppendLine($"  {"Lore (Religion)",-25} {character.Skills.LoreReligion.Value,3}");
-                if (character.Skills.Perception.HasValue)
-                    sb.AppendLine($"  {"Perception",-25} {character.Skills.Perception.Value,3}");
-                if (character.Skills.Persuasion.HasValue)
-                    sb.AppendLine($"  {"Persuasion",-25} {character.Skills.Persuasion.Value,3}");
-                if (character.Skills.UseMagicDevice.HasValue)
-                    sb.AppendLine($"  {"Use Magic Device",-25} {character.Skills.UseMagicDevice.Value,3}");
-                sb.AppendLine();
-            }
-
-            if (character.Equipment != null)
-            {
-                sb.AppendLine("Equipment:");
-                
-                // Display all weapon sets
-                if (character.Equipment.WeaponSets != null && character.Equipment.WeaponSets.Any())
-                {
-                    foreach (var weaponSet in character.Equipment.WeaponSets)
-                    {
-                        var activeMarker = weaponSet.SetNumber == character.Equipment.ActiveWeaponSetIndex + 1 ? " (Active)" : "";
-                        sb.AppendLine($"  Weapon Set {weaponSet.SetNumber}{activeMarker}:");
-                        
-                        if (weaponSet.MainHand?.Name != null)
-                            sb.AppendLine($"    Main Hand: {FormatEquipmentSlot(weaponSet.MainHand)}");
-                        else
-                            sb.AppendLine($"    Main Hand: (empty)");
-                            
-                        if (weaponSet.OffHand?.Name != null)
-                            sb.AppendLine($"    Off Hand:  {FormatEquipmentSlot(weaponSet.OffHand)}");
-                        else
-                            sb.AppendLine($"    Off Hand:  (empty)");
-                        
-                        sb.AppendLine();
-                    }
-                }
-                else
-                {
-                    // Fallback to legacy format if no weapon sets
-                    if (character.Equipment.MainHand?.Name != null)
-                        sb.AppendLine($"  Main Hand:   {FormatEquipmentSlot(character.Equipment.MainHand)}");
-                    if (character.Equipment.OffHand?.Name != null)
-                        sb.AppendLine($"  Off Hand:    {FormatEquipmentSlot(character.Equipment.OffHand)}");
-                }
-                
-                sb.AppendLine("  Armor & Accessories:");
-                if (character.Equipment.Head?.Name != null)
-                    sb.AppendLine($"    Head:      {FormatEquipmentSlot(character.Equipment.Head)}");
-                if (character.Equipment.Neck?.Name != null)
-                    sb.AppendLine($"    Neck:      {FormatEquipmentSlot(character.Equipment.Neck)}");
-                if (character.Equipment.Body?.Name != null)
-                    sb.AppendLine($"    Body:      {FormatEquipmentSlot(character.Equipment.Body)}");
-                if (character.Equipment.Belt?.Name != null)
-                    sb.AppendLine($"    Belt:      {FormatEquipmentSlot(character.Equipment.Belt)}");
-                if (character.Equipment.Gloves?.Name != null)
-                    sb.AppendLine($"    Gloves:    {FormatEquipmentSlot(character.Equipment.Gloves)}");
-                if (character.Equipment.Boots?.Name != null)
-                    sb.AppendLine($"    Boots:     {FormatEquipmentSlot(character.Equipment.Boots)}");
-                if (character.Equipment.Ring1?.Name != null)
-                    sb.AppendLine($"    Ring 1:    {FormatEquipmentSlot(character.Equipment.Ring1)}");
-                if (character.Equipment.Ring2?.Name != null)
-                    sb.AppendLine($"    Ring 2:    {FormatEquipmentSlot(character.Equipment.Ring2)}");
-                if (character.Equipment.Cloak?.Name != null)
-                    sb.AppendLine($"    Cloak:     {FormatEquipmentSlot(character.Equipment.Cloak)}");
-                if (character.Equipment.Bracers?.Name != null)
-                    sb.AppendLine($"    Bracers:   {FormatEquipmentSlot(character.Equipment.Bracers)}");
-                
-                if (character.Equipment.QuickSlots != null && character.Equipment.QuickSlots.Any())
-                {
-                    sb.AppendLine($"  Quick Slots:");
-                    for (int i = 0; i < character.Equipment.QuickSlots.Count; i++)
-                    {
-                        var qs = character.Equipment.QuickSlots[i];
-                        if (qs?.Name != null)
-                            sb.AppendLine($"    Slot {i + 1}: {FormatEquipmentSlot(qs)}");
-                    }
-                }
-                
-                sb.AppendLine();
-            }
-
-            if (character.Spellbooks != null && character.Spellbooks.Any())
-            {
-                sb.AppendLine("Spellcasting:");
-                foreach (var spellbook in character.Spellbooks)
-                {
-                    sb.AppendLine($"  {spellbook.ClassName}:");
-                    sb.AppendLine($"    Caster Level: {spellbook.CasterLevel}");
-                    
-                    if (spellbook.SpellSlotsPerDay != null && spellbook.SpellSlotsPerDay.Any())
-                    {
-                        sb.AppendLine("    Spell Slots per Day:");
-                        foreach (var level in spellbook.SpellSlotsPerDay.Keys.OrderBy(k => k))
-                        {
-                            var slots = spellbook.SpellSlotsPerDay[level];
-                            
-                            // Check if this level has domain slots
-                            var hasDomainSlot = spellbook.DomainSlotLevels != null && 
-                                              spellbook.DomainSlotLevels.Contains(level);
-                            
-                            if (hasDomainSlot && slots > 1)
-                            {
-                                // Display separated: "5 slots + 1 domain slot"
-                                var baseSlots = slots - 1;
-                                sb.AppendLine($"      Level {level}: {baseSlots} slots + 1 domain slot");
-                            }
-                            else
-                            {
-                                sb.AppendLine($"      Level {level}: {slots} slots");
-                            }
-                        }
-                    }
-                    
-                    if (spellbook.KnownSpells != null && spellbook.KnownSpells.Any())
-                    {
-                        sb.AppendLine("    Known Spells:");
-                        foreach (var level in spellbook.KnownSpells.Keys.OrderBy(k => k))
-                        {
-                            var spells = spellbook.KnownSpells[level];
-                            if (spells != null && spells.Any())
-                            {
-                                sb.AppendLine($"      Level {level}: {string.Join(", ", spells)}");
-                            }
-                        }
-                    }
-                    sb.AppendLine();
-                }
-            }
-
-            if (character.LevelProgression != null && character.LevelProgression.Any())
-            {
-                sb.AppendLine("Level Progression:");
-                foreach (var level in character.LevelProgression)
-                {
-                    sb.AppendLine($"  Level {level.Level}:");
-                    if (level.Features != null && level.Features.Any())
-                    {
-                        foreach (var feature in level.Features)
-                        {
-                            sb.AppendLine($"    • {feature}");
-                        }
-                    }
-                }
-                sb.AppendLine();
-            }
-
+            // Delegate formatting to CharacterParser - single source of formatting logic
+            sb.AppendLine(_characterFormatter.FormatCharacter(character));
             sb.AppendLine(new string('=', 80));
             sb.AppendLine();
         }
