@@ -78,6 +78,10 @@ public class TextFileGenerator
             sb.AppendLine($"=== {character.Name} ===");
             sb.AppendLine();
             sb.AppendLine($"Race: {character.Race}");
+            if (!string.IsNullOrEmpty(character.Alignment))
+            {
+                sb.AppendLine($"Alignment: {character.Alignment}");
+            }
             
             if (character.Classes != null && character.Classes.Any())
             {
@@ -96,7 +100,7 @@ public class TextFileGenerator
 
             if (character.Attributes != null)
             {
-                sb.AppendLine("Attributes:");
+                sb.AppendLine("Attributes (base values + level-up allocated points, without racial/class/item/size modifiers):");
                 sb.AppendLine($"  Strength:     {character.Attributes.Strength}");
                 sb.AppendLine($"  Dexterity:    {character.Attributes.Dexterity}");
                 sb.AppendLine($"  Constitution: {character.Attributes.Constitution}");
@@ -108,7 +112,7 @@ public class TextFileGenerator
 
             if (character.Skills != null)
             {
-                sb.AppendLine("Skills:");
+                sb.AppendLine("Skills (allocated points, without racial/class/item/size modifiers):");
                 if (character.Skills.Mobility.HasValue)
                     sb.AppendLine($"  {"Mobility",-25} {character.Skills.Mobility.Value,3}");
                 if (character.Skills.Athletics.HasValue)
@@ -218,7 +222,21 @@ public class TextFileGenerator
                         foreach (var level in spellbook.SpellSlotsPerDay.Keys.OrderBy(k => k))
                         {
                             var slots = spellbook.SpellSlotsPerDay[level];
-                            sb.AppendLine($"      Level {level}: {slots} slots");
+                            
+                            // Check if this level has domain slots
+                            var hasDomainSlot = spellbook.DomainSlotLevels != null && 
+                                              spellbook.DomainSlotLevels.Contains(level);
+                            
+                            if (hasDomainSlot && slots > 1)
+                            {
+                                // Display separated: "5 slots + 1 domain slot"
+                                var baseSlots = slots - 1;
+                                sb.AppendLine($"      Level {level}: {baseSlots} slots + 1 domain slot");
+                            }
+                            else
+                            {
+                                sb.AppendLine($"      Level {level}: {slots} slots");
+                            }
                         }
                     }
                     
@@ -307,20 +325,6 @@ public class TextFileGenerator
                     {
                         sb.AppendLine($"      Current Production:");
                         foreach (var item in artisan.CurrentProduction)
-                        {
-                            var itemLine = $"        - {item.Name}";
-                            if (!string.IsNullOrEmpty(item.Type))
-                                itemLine += $" [{item.Type}]";
-                            if (item.Enchantments != null && item.Enchantments.Any())
-                                itemLine += $" ({string.Join(", ", item.Enchantments)})";
-                            sb.AppendLine(itemLine);
-                        }
-                    }
-                    
-                    if (artisan.PreviousItems != null && artisan.PreviousItems.Any())
-                    {
-                        sb.AppendLine($"      Previous Items:");
-                        foreach (var item in artisan.PreviousItems)
                         {
                             var itemLine = $"        - {item.Name}";
                             if (!string.IsNullOrEmpty(item.Type))

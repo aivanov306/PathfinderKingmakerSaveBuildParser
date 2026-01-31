@@ -99,7 +99,7 @@ public class EnhancedCharacterParser
             var stats = _resolver.Resolve(statsRef);
             if (stats != null)
             {
-                sb.Append("Stats: ");
+                sb.Append("Stats (base values + level-up allocated points, without racial/class/item/size modifiers): ");
                 sb.Append($"Str {GetStatValue(stats, "Strength")}, ");
                 sb.Append($"Dex {GetStatValue(stats, "Dexterity")}, ");
                 sb.Append($"Con {GetStatValue(stats, "Constitution")}, ");
@@ -228,7 +228,7 @@ public class EnhancedCharacterParser
     private string GetStatValue(JToken stats, string statName)
     {
         var statObj = _resolver.Resolve(stats[statName]);
-        return statObj?["PermanentValue"]?.ToString() ?? "?";
+        return statObj?["m_BaseValue"]?.ToString() ?? "?";
     }
 
     private void AppendSkills(JToken stats, StringBuilder sb)
@@ -259,7 +259,7 @@ public class EnhancedCharacterParser
                 if (!isSkill) continue;
 
                 string? skillType = typeProperty;
-                int skillValue = (int?)resolvedDep["PermanentValue"] ?? 0;
+                int skillValue = (int?)resolvedDep["m_BaseValue"] ?? 0;
 
                 // Map skill types to display names
                 string? skillName = skillType switch
@@ -287,7 +287,7 @@ public class EnhancedCharacterParser
 
         if (skills.Any())
         {
-            sb.AppendLine("Skills:");
+            sb.AppendLine("Skills (allocated points, without racial/class/item/size modifiers):");
             foreach (var skill in skills.OrderBy(s => s.Key))
             {
                 sb.AppendLine($"  {skill.Key}: {skill.Value:+0;-0;0}");

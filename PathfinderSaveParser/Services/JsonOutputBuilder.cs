@@ -13,14 +13,16 @@ public class JsonOutputBuilder
     private readonly ReportOptions _options;
     private readonly ItemCategorizationService _categorization;
     private readonly EquipmentParser _equipmentParser;
+    private readonly string? _mainCharacterUniqueId;
 
-    public JsonOutputBuilder(BlueprintLookupService blueprintLookup, RefResolver? resolver = null, ReportOptions? options = null)
+    public JsonOutputBuilder(BlueprintLookupService blueprintLookup, RefResolver? resolver = null, ReportOptions? options = null, string? mainCharacterUniqueId = null)
     {
         _blueprintLookup = blueprintLookup;
         _resolver = resolver;
         _options = options ?? new ReportOptions();
         _categorization = new ItemCategorizationService();
         _equipmentParser = new EquipmentParser(blueprintLookup, resolver ?? throw new ArgumentNullException(nameof(resolver)), _options);
+        _mainCharacterUniqueId = mainCharacterUniqueId;
     }
 
     public KingdomStatsJson? BuildKingdomJson(Kingdom? kingdom, int money, string? gameTime, int? bpPerTurnOverride)
@@ -494,6 +496,31 @@ public class JsonOutputBuilder
             character.Race = _blueprintLookup.GetName(raceId);
         }
 
+        // Get alignment - use first entry for main character, last entry for companions
+        var alignmentObj = descriptor["Alignment"];
+        if (alignmentObj != null)
+        {
+            var history = alignmentObj["m_History"];
+            if (history != null && history.HasValues)
+            {
+                // Check if this is the main character by comparing unique IDs
+                var unitUniqueId = unit["UniqueId"]?.ToString();
+                bool isMainCharacter = !string.IsNullOrEmpty(_mainCharacterUniqueId) && 
+                                      !string.IsNullOrEmpty(unitUniqueId) && 
+                                      unitUniqueId.Equals(_mainCharacterUniqueId, StringComparison.OrdinalIgnoreCase);
+                
+                // Main character uses starting alignment, companions use current alignment
+                var alignmentEntry = isMainCharacter ? history.First() : history.Last();
+                var direction = alignmentEntry?["Direction"]?.ToString();
+                if (!string.IsNullOrEmpty(direction))
+                {
+                    // Format alignment: "LawfulGood" -> "Lawful Good"
+                    character.Alignment = System.Text.RegularExpressions.Regex.Replace(
+                        direction, "([a-z])([A-Z])", "$1 $2");
+                }
+            }
+        }
+
         // Get classes
         character.Classes = new List<ClassInfoJson>();
         var classes = progression["Classes"];
@@ -564,7 +591,7 @@ public class JsonOutputBuilder
     {
         if (_resolver == null) return 0;
         var statObj = _resolver.Resolve(stats[statName]);
-        return (int?)statObj?["PermanentValue"] ?? 0;
+        return (int?)statObj?["m_BaseValue"] ?? 0;
     }
 
     private SkillsJson? ParseSkillsJson(JToken stats)
@@ -598,7 +625,7 @@ public class JsonOutputBuilder
                 if (!isSkill) continue;
 
                 string? skillType = typeProperty;
-                int skillValue = (int?)resolvedDep["PermanentValue"] ?? 0;
+                int skillValue = (int?)resolvedDep["m_BaseValue"] ?? 0;
 
                 // Map skill types to properties
                 switch (skillType)
@@ -700,6 +727,24 @@ public class JsonOutputBuilder
             // Parse known spells and special spells (domain spells)
             var knownSpells = spellbook["m_KnownSpells"];
             var specialSpells = spellbook["m_SpecialSpells"];
+            
+            // Track which spell levels have domain slots
+            var domainSlotLevels = new List<int>();
+            if (specialSpells != null && specialSpells.HasValues)
+            {
+                for (int i = 0; i < specialSpells.Count(); i++)
+                {
+                    var levelSpells = specialSpells.ElementAtOrDefault(i);
+                    if (levelSpells != null && levelSpells.HasValues && levelSpells.Any())
+                    {
+                        domainSlotLevels.Add(i);
+                    }
+                }
+            }
+            if (domainSlotLevels.Any())
+            {
+                spellbookJson.DomainSlotLevels = domainSlotLevels;
+            }
             
             int maxLevel = Math.Max(
                 knownSpells?.Count() ?? 0,

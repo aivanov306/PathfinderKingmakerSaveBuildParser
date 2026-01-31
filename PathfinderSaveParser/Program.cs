@@ -208,11 +208,14 @@ class Program
             var kingdomParser = new KingdomStatsParser(blueprintLookup, reportOptions);
             var inventoryParser = new InventoryParser(blueprintLookup, itemCategorization, reportOptions);
             
+            // Get main character unique ID from player.json
+            var mainCharacterUniqueId = playerJson["m_MainCharacter"]?["m_UniqueId"]?.ToString();
+            
             // Create RefResolver for party.json
             Console.WriteLine("Indexing party.json references...");
             var partyResolver = new RefResolver(partyJson);
             var enhancedParser = new EnhancedCharacterParser(blueprintLookup, partyResolver, reportOptions);
-            var jsonBuilder = new JsonOutputBuilder(blueprintLookup, partyResolver, reportOptions);
+            var jsonBuilder = new JsonOutputBuilder(blueprintLookup, partyResolver, reportOptions, mainCharacterUniqueId);
             Console.WriteLine("Reference indexing complete.");
             Console.WriteLine();
             Console.WriteLine(new string('=', 80));
